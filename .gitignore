@@ -26,3 +26,27 @@
 *.exe
 *.out
 *.app
+*.exp
+
+# Visual Studio 2010
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.opensdf
+*.sdf
+*.sln
+*.suo
+*.pdb
+*.ilk
+*.pch
+*.idb
+*.ipch
+
+# Logs
+*.tlog
+*.rc
+*.rc2
+*.res
+*.lastbuildstate
+*.unsuccessfulbuild
+*.log

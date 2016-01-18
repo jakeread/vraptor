@@ -1,0 +1,6 @@
+; VRaptor.def : Declares the module parameters for the DLL.
+
+; LIBRARY      "VRaptor"
+
+EXPORTS
+    ; Explicit exports can go here
