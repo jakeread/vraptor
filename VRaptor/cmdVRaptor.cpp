@@ -73,7 +73,7 @@ CRhinoCommand::result CCommandVRaptor::RunCommand( const CRhinoCommandContext& c
   // a command-line, or scriptable interface.
 
   ON_wString wStr;
-  wStr.Format( L"The raptor is sleeping.\n", EnglishCommandName() );
+  wStr.Format( L"The raptor is sleeping. Git update from Laptop.\n", EnglishCommandName() );
   if( context.IsInteractive() )
     RhinoMessageBox( wStr, PlugIn()->PlugInName(), MB_OK );
   else
