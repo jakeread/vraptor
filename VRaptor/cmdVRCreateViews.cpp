@@ -36,7 +36,7 @@ static class CCommandVRCreateViews theVRCreateViewsCommand;
 CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandContext& context )
 {
 	ON_wString wStr;
-	wStr.Format( L"READY SET", EnglishCommandName() );
+	wStr.Format( L"READY SET\n", EnglishCommandName() );
 	RhinoApp().Print( wStr );
 
 	context.m_doc.NewView( ON_3dmView() );
@@ -46,10 +46,33 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 
 	context.m_doc.GetViewList(viewList, true, true);
 
-	CRhinoView* LeftVRView = viewList[viewList.Count()-1];
-	CRhinoView* RightVRView = viewList[viewList.Count()];
+	CRhinoView* LeftVRView = viewList[viewList.Count()-2];
+	CRhinoView* RightVRView = viewList[viewList.Count()-1];
 
-	// now re-name, update positions, update positions outside of loop: continuously
+	// TO NEW METHOD
+
+	ON_3dPoint locationL = ON_3dPoint(0.0,100.1,0.1);
+	ON_3dPoint locationR = ON_3dPoint(0.0,165.1,0.2);
+
+	LeftVRView->ActiveViewport().SetCameraLocation(locationL);
+	RightVRView->ActiveViewport().SetCameraLocation(locationR);
+
+	// proper: should check if 2 viewports with these stats already exist, but that's for later...
+	
+	// but can't seem to change the name. throws windows assertion error. wtf.
+
+	//ON_wString left;
+	//left.Format(L"LeftVRView", EnglishCommandName() );
+	//RhinoApp().Print( left );
+	//LeftVRView->ActiveViewport().SetName( left );
+
+	//ON_wString right;
+	//left.Format(L"RightVRView", EnglishCommandName() );
+	//RhinoApp().Print( right );
+	// LeftVRView->ActiveViewport().SetName( right ); // bool ??!?!
+
+	// now re-name update positions outside of loop: continuously
+	// bring in OVR Tracking and assign to VR Viewports
 	// then, orbit?
 
 	return CRhinoCommand::success;
