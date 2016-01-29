@@ -73,19 +73,80 @@ static class CCommandVRCreateViews theVRCreateViewsCommand;
 
 CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandContext& context )
 {
+	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example
+
 	ON_wString wStr;
 	wStr.Format( L"READY SET\n", EnglishCommandName() );
 	RhinoApp().Print( wStr );
 
-	context.m_doc.NewView( ON_3dmView() );
-	context.m_doc.NewView( ON_3dmView() ); // make 2 new views
-
 	ON_SimpleArray<CRhinoView*> viewList; // don't know what is up with* this*
+	ON_SimpleArray<ON_UUID> viewportIds;
+	CRhinoView* lView = 0;
+	CRhinoView* rView = 0;
+	ON_SimpleArray<CRhinoView*> lrViews; // will contain our vr views
+	int i = 0; // also use this in loops
+	int lr = 0; // use to track 1st and 2nd find
 
-	context.m_doc.GetViewList(viewList, true, true);
+	// builds a list of (current) viewport IDs
+	context.m_doc.GetViewList( viewList, true, false );
+	for ( i = 0; i < viewList.Count(); i ++)
+	{
+		CRhinoView* tempView = viewList[i]; // pull view out -> this is redeclared here, in sample, but not in second loop
+		if (tempView)
+			viewportIds.Append( tempView->ActiveViewportID() );
+	}
+	viewList.Empty(); // empty bc we are going to re-build later when new views
 
-	CRhinoView* LeftVRView = viewList[viewList.Count()-2];
-	CRhinoView* RightVRView = viewList[viewList.Count()-1];
+	context.m_doc.NewView( ON_3dmView() );
+	context.m_doc.NewView( ON_3dmView() ); // we will build two
+
+	// find viewport UUID just created
+	context.m_doc.GetViewList( viewList, true, false);
+	for (i = 0; i < viewList.Count(); i++)
+	{
+		CRhinoView* tempView = viewList[i];
+		if (tempView)
+		{
+			int rc = viewportIds.Search( tempView->ActiveViewportID() ); // returns index of 1st element which satisfies search. returns -1 when no such item found
+			if (rc < 0 ) // if current tempView did not exist prior to this running
+			{
+				if (lr > 0) // and if lr already found 1
+				{
+					rView = tempView; // right is 2nd view we find 
+					break;
+				// so this breaks when we find, and lView is left as the viewList[i] where we found the new viewport, whose ID was not in our list.
+				// and we are left with lView being = viewList[i] at new view
+				}
+				if (lr == 0)
+				{
+					lView = tempView; // left is 1st view
+					lr = 1;
+				}
+			}
+
+			else
+				tempView = 0; // reset lView to null and re-loop
+		}
+	}
+
+	if (lView)
+	{
+		ON_3dmView l = lView->ActiveViewport().View();
+		l.m_name = L"lView";
+		lView->ActiveViewport().SetView( l );
+		lView->Redraw();
+	}
+
+	if (rView)
+	{
+		ON_3dmView r = rView->ActiveViewport().View();
+		r.m_name = L"rView";
+		rView->ActiveViewport().SetView( r );
+		rView->Redraw();
+	}
+	
+	lrViews.Append(lView);
+	lrViews.Append(rView);
 
 	// TO NEW METHOD
 
@@ -97,14 +158,16 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 	// but we're going to have to learn how to control viewport settings (all) outright regardless
 	// so probably actually just try to do it from the syncviews example.
 
-	LeftVRView->Viewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35); // target distance, symmetricFrustrum?,lenslength
-	RightVRView->Viewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
+	//LeftVRView->Viewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35); // target distance, symmetricFrustrum?,lenslength
+	//RightVRView->Viewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35); //
 
-	LeftVRView->Viewport().m_v.m_vp.SetCameraLocation(locationL);
-	RightVRView->Viewport().m_v.m_vp.SetCameraLocation(locationR);
+	//LeftVRView->Viewport().m_v.m_vp.SetCameraLocation(locationL);
+	//RightVRView->Viewport().m_v.m_vp.SetCameraLocation(locationR);
 	
-	LeftVRView->Viewport().m_v.m_vp.SetTargetPoint(targetSetup);
-	RightVRView->Viewport().m_v.m_vp.SetTargetPoint(targetSetup);
+	//LeftVRView->Viewport().m_v.m_vp.SetTargetPoint(targetSetup);
+	//RightVRView->Viewport().m_v.m_vp.SetTargetPoint(targetSetup);
+	
+	// need to probably copy all settings from some other viewport, then change positions. 
 
 	// proper: should check if 2 viewports with these stats already exist, but that's for later...
 	
@@ -112,19 +175,19 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 
 	ON_wString left;
 	left.Format(L"LeftVRView\n", EnglishCommandName() );
-	RhinoApp().Print( left );
-	LeftVRView->Viewport().m_v.m_name = left;
+	//RhinoApp().Print( left );
+	//LeftVRView->Viewport().m_v.m_name = left;
 
 	ON_wString right;
 	right.Format(L"RightVRView\n", EnglishCommandName() );
-	RhinoApp().Print( right );
-	RightVRView->Viewport().m_v.m_name = right; 
+	//RhinoApp().Print( right );
+	//RightVRView->Viewport().m_v.m_name = right; 
 
 	ON_wString SYNC;
 	SYNC.Format(L"SYNCVRBEGIN\n", EnglishCommandName() );
-	RhinoApp().Print( SYNC );
+	//RhinoApp().Print( SYNC );
 
-	SyncVR(LeftVRView, RightVRView); // ok it runs once. we should also set them up perspective & looking at 0,0
+	//SyncVR(LeftVRView, RightVRView); // ok it runs once. we should also set them up perspective & looking at 0,0
 
 	// but do not update names immediately; have to refresh somehow
 
