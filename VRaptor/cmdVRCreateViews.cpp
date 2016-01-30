@@ -259,6 +259,7 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 			lrViews[i]->ActiveViewport().SetView(onView);
 			lrViews[i]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
 			lrViews[i]->ActiveViewport().m_v.m_vp.SetCameraLocation(locationL);
+			lrViews[i]->FloatRhinoView(true);
 			// lrViews[i]->ActiveViewport().m_v.m_vp.SetTargetPoint(targetSetup); // obvs something is up with setting the target. throws math errors. dir needed perhaps
 			lrViews[i]->Redraw();
 		}
