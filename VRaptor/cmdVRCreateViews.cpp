@@ -11,29 +11,29 @@
 // BEGIN VRCreateViews command
 //
 
-static void SyncVR( CRhinoView* left, CRhinoView* right) // not calling continuously. much else to add; re:conduits ... pull from example. werk till it werks. then OVRintegration
+static void SyncVR( CRhinoView* lView, CRhinoView* rView) // not calling continuously. much else to add; re:conduits ... pull from example. werk till it werks. then OVRintegration
 {
 	ON_wString inLoopVR;
 	inLoopVR.Format(L"inLoopVR\n");
 	RhinoApp().Print( inLoopVR );
 
-	if (left && right) 
+	if (lView && rView) 
 	{ // first we will make it sync the two views as in example
 		ON_wString inIf;
 		inIf.Format(L"inIf\n");
 		RhinoApp().Print( inIf );
 
-		const ON_3dmView& v0 = left->Viewport().View(); // get Open Nurbs view from 1st CRhinoView* object
-		const ON_Viewport& vp0 = left->Viewport().VP(); // get ON viewport from 1st CRhinoView* object 
+		const ON_3dmView& v0 = lView->Viewport().View(); // get Open Nurbs view from 1st CRhinoView* object
+		const ON_Viewport& vp0 = lView->Viewport().VP(); // get ON viewport from 1st CRhinoView* object 
 
-		ON_3dmView& v1 = right->Viewport().m_v; // non-const; ? this important? otherwise same structure as above
-		ON_Viewport& vp1 = right->Viewport().m_v.m_vp; // m_v is settings, m_vp is projection information
+		ON_3dmView& v1 = rView->Viewport().m_v; // non-const; ? this important? otherwise same structure as above
+		ON_Viewport& vp1 = rView->Viewport().m_v.m_vp; // m_v is settings, m_vp is projection information
 		
 		vp1.SetProjection( vp0.Projection() ); // so using Viewport().View() to pull from and Viewport().m_v to write to. cannot write to function, yah, duh, all these Things() are functions which return values. not things themselves.
 		vp1.SetCameraLocation( vp0.CameraLocation() );
 		vp1.SetCameraDirection( vp0.CameraDirection() );
 		vp1.SetCameraUp( vp0.CameraUp() ); // breakpoint triggered here
-		v1.SetTargetPoint( v0.TargetPoint() ); // ok so all these assignments make sense
+		// v1.SetTargetPoint( v0.TargetPoint() ); // ok so all these assignments make sense
 
 		double fl, fr, ft, fb, fn, ff, fa; // ok dealing with frustrums now: 'Bounding Box' for rendering images. Apparently needs to be kept in sync as well
 		vp1.GetFrustumAspect( fa ); // vp1 may be an error -> vp0 . this from example
@@ -41,12 +41,121 @@ static void SyncVR( CRhinoView* left, CRhinoView* right) // not calling continuo
 		vp1.SetFrustum( fl, fr, fb, ft, fn, ff );
 		vp1.SetFrustumAspect( fa );
 
-		left->Viewport().SetTarget( right->Viewport().Target() ); // this is confusing, though... we have been setting left to right otherwise? ? AND it works both ways!
+		lView->Viewport().SetTarget( rView->Viewport().Target() ); // this is confusing, though... we have been setting left to right otherwise? ? AND it works both ways!
 		
 		ON_wString endIf;
 		endIf.Format(L"endIf\n");
 		RhinoApp().Print( endIf );
 	}
+} // need to setup so this calls everytime at beginning of pipeline
+
+class VRSyncViewsConduit: public CRhinoDisplayConduit // class def ?
+{
+public:
+	VRSyncViewsConduit();
+
+	bool ExecConduit(
+		CRhinoDisplayPipeline&, // pipeline executing this conduit
+		UINT,					// current channel in pipeline
+		bool&					// channel termination flag
+		);						// this all from cmbSampleSyncViews.cpp in rhino sdk / examples c++ github
+
+	void NotifyConduit(
+		EConduitNotifiers,		// event reported by the display pipeline
+		CRhinoDisplayPipeline&	// display pipeling calling this conduit
+		);
+
+public:
+	CRhinoView* m_pView1; // truly lost; idk what / why is declared here
+	CRhinoView* m_pView2;
+	HWND m_hWnd1;
+	HWND m_hWnd2;
+	bool m_bDirty1;
+	bool m_bDirty2;
+};
+
+VRSyncViewsConduit::VRSyncViewsConduit() // class constructor ?
+	: CRhinoDisplayConduit(	CSupportChannels::SC_INITFRAMEBUFFER )
+{
+	// init all public vars as in class def
+	m_pView1 = 0;
+	m_pView2 = 0;
+	m_hWnd1 = 0;
+	m_hWnd2 = 0;
+	m_bDirty1 = false;
+	m_bDirty2 = false;
+}
+
+void VRSyncViewsConduit::NotifyConduit( EConduitNotifiers Notify, CRhinoDisplayPipeline& dp)
+{
+	if ( (m_pView1 && m_pView1->DisplayPipeline() == 0) ||  // if views empty then bail
+		(m_pView2 && m_pView2->DisplayPipeline() == 0 ) )
+	{
+		m_pView1 = 0;
+		m_pView2 = 0;
+		Disable();
+		return;
+	}
+
+	switch( Notify )
+	{
+
+		case CN_PROJECTIONCHANGED:
+		{
+			CRhinoView* pActiveView = ::RhinoApp().ActiveView(); // pick up currently active view
+			if (pActiveView) // check again if exists lol wut
+			{
+				if ( (pActiveView == m_pView1) && (m_pView == m_pView1) ) // if active is the one we are syncing with if m_pView ? where u declare eh?
+				{
+					m_hWnd1 = m_pView1->m_hWnd; // look up m_hWnd, m_pView, m_bDirty. Rhino native types.
+					SyncVR( m_pView1, m_pView2); // or l to r
+					m_bDirty1 = true;			// m_pView "The view that the conduit is working with at the time of ExecConduit"
+					m_bDirty2 = false;			// m_hWnd is a mystery.
+				}								// so is m_bDirty
+				else if ( (pActiveView == m_pView2) && (m_pView == m_pView2) )
+				{
+					m_hWnd2 = m_pView2->m_hWnd;
+					SyncVR( m_pView2, m_pView1); // or r to l
+					m_bDirty2 = true;
+					m_bDirty1 = false;
+				}
+			}
+			break;
+		}
+
+		case CN_PIPELINECLOSED:
+		{
+			if (m_bDirty1 && !m_bDirty2) // if true & false
+			{
+				m_bDirty1 = false;
+				CClientDC dc( m_pView2 );
+				if (m_pView2->DisplayPipeline()->DrawFrameBuffer(m_pView2->DisplayAttributes()) )
+					m_pView2->DisplayPipeline()->ShowFrameBuffer( &dc ); // truly idk
+			}
+			else if ( !m_bDirty1 && m_bDirty2 )
+			{
+				m_bDirty2 = false;
+		        CClientDC dc( m_pView1 );
+			    if( m_pView1->DisplayPipeline()->DrawFrameBuffer(m_pView1->DisplayAttributes()) )
+				m_pView1->DisplayPipeline()->ShowFrameBuffer( &dc );
+			}
+			else
+			{
+				m_bDirty1 = m_bDirty2 = false;
+			}
+			break;
+		}
+	}
+}
+
+bool VRSyncViewsConduit::ExecConduit( CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTerminate)
+{
+	switch( nChannel )
+	{
+	case CSupportChannels::SC_INITFRAMEBUFFER:
+		break;
+	}
+	return true;
 }
 
 #pragma region VRCreateViews command
@@ -66,6 +175,9 @@ public:
 	const wchar_t* EnglishCommandName() { return L"VRCreateViews"; }
 	const wchar_t* LocalCommandName() const { return L"VRCreateViews"; }
 	CRhinoCommand::result RunCommand( const CRhinoCommandContext& );
+
+public:
+	VRSyncViewsConduit vrConduit;
 };
 
 // The one and only CCommandVRCreateViews object
@@ -129,65 +241,61 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 		}
 	}
 
-	if (lView)
-	{
-		ON_3dmView l = lView->ActiveViewport().View();
-		l.m_name = L"lView";
-		lView->ActiveViewport().SetView( l );
-		lView->Redraw();
-	}
-
-	if (rView)
-	{
-		ON_3dmView r = rView->ActiveViewport().View();
-		r.m_name = L"rView";
-		rView->ActiveViewport().SetView( r );
-		rView->Redraw();
-	}
-	
 	lrViews.Append(lView);
 	lrViews.Append(rView);
 
-	// TO NEW METHOD
-
+	// init points
 	ON_3dPoint locationL = ON_3dPoint(100.0,100.0,100.0);
 	ON_3dPoint locationR = ON_3dPoint(100.0,165.1,100.0);
 	ON_3dPoint targetSetup = ON_3dPoint(0,0,0);
 
-	// ok maybe try pulling m_vp out of the default "perspective" viewport, or current, and setting it here.
-	// but we're going to have to learn how to control viewport settings (all) outright regardless
-	// so probably actually just try to do it from the syncviews example.
+	if (lView && rView)
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			ON_3dmView onView = lrViews[i]->ActiveViewport().View();
+			if(i == 0)
+				onView.m_name = L"lView";
+			if(i == 1)
+				onView.m_name = L"rView";
+			lrViews[i]->ActiveViewport().SetView(onView);
+			lrViews[i]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
+			lrViews[i]->ActiveViewport().m_v.m_vp.SetCameraLocation(locationL);
+			// lrViews[i]->ActiveViewport().m_v.m_vp.SetTargetPoint(targetSetup); // obvs something is up with setting the target. throws math errors. dir needed perhaps
+			lrViews[i]->Redraw();
+		}
+	}
 
-	//LeftVRView->Viewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35); // target distance, symmetricFrustrum?,lenslength
-	//RightVRView->Viewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35); //
-
-	//LeftVRView->Viewport().m_v.m_vp.SetCameraLocation(locationL);
-	//RightVRView->Viewport().m_v.m_vp.SetCameraLocation(locationR);
-	
-	//LeftVRView->Viewport().m_v.m_vp.SetTargetPoint(targetSetup);
-	//RightVRView->Viewport().m_v.m_vp.SetTargetPoint(targetSetup);
-	
-	// need to probably copy all settings from some other viewport, then change positions. 
-
-	// proper: should check if 2 viewports with these stats already exist, but that's for later...
-	
-	// but can't seem to change the name. throws windows assertion error. wtf.
-
-	ON_wString left;
-	left.Format(L"LeftVRView\n", EnglishCommandName() );
-	//RhinoApp().Print( left );
-	//LeftVRView->Viewport().m_v.m_name = left;
-
-	ON_wString right;
-	right.Format(L"RightVRView\n", EnglishCommandName() );
-	//RhinoApp().Print( right );
-	//RightVRView->Viewport().m_v.m_name = right; 
 
 	ON_wString SYNC;
 	SYNC.Format(L"SYNCVRBEGIN\n", EnglishCommandName() );
-	//RhinoApp().Print( SYNC );
+	RhinoApp().Print( SYNC );
 
-	//SyncVR(LeftVRView, RightVRView); // ok it runs once. we should also set them up perspective & looking at 0,0
+	if (vrConduit.IsEnabled()
+	&& ::IsWindow( vrConduit.m_hWnd1 )
+	&& ::IsWindow( vrConduit.m_hWnd2 ) ) // if is already enabled ?
+	{
+		vrConduit.m_pView1 = 0;
+		vrConduit.m_pView2 = 0;
+		vrConduit.Disable();
+	}
+	else
+	{
+		vrConduit.m_pView1 = lView;
+		vrConduit.m_pView2 = rView;
+		vrConduit.m_hWnd1 = vrConduit.m_pView1->m_hWnd;
+		vrConduit.m_hWnd2 = vrConduit.m_pView2->m_hWnd;
+
+		SyncVR(lView, rView); // ok it runs once. we should also set them up perspective & looking at 0,0
+
+		vrConduit.Bind( *lView );
+		vrConduit.Bind( *rView );
+
+		lView->Redraw();
+		rView->Redraw();
+		
+		vrConduit.Enable();
+	}
 
 	// but do not update names immediately; have to refresh somehow
 
@@ -198,7 +306,7 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 	return CRhinoCommand::success;
 }
 
-#pragma endregion
+#pragma endregion 
 
 //
 // END VRCreateViews command
