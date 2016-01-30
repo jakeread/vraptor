@@ -4,6 +4,8 @@
 
 #include "StdAfx.h"
 #include "VRaptorPlugIn.h"
+#include <iostream>
+
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -13,12 +15,10 @@
 
 static void SyncVR( CRhinoView* lView, CRhinoView* rView) // not calling continuously. much else to add; re:conduits ... pull from example. werk till it werks. then OVRintegration
 {
-	ON_wString inLoopVR;
-	inLoopVR.Format(L"inLoopVR\n");
-	RhinoApp().Print( inLoopVR );
 
 	if (lView && rView) 
 	{ // first we will make it sync the two views as in example
+
 		ON_wString inIf;
 		inIf.Format(L"inIf\n");
 		RhinoApp().Print( inIf );
@@ -43,9 +43,6 @@ static void SyncVR( CRhinoView* lView, CRhinoView* rView) // not calling continu
 
 		lView->Viewport().SetTarget( rView->Viewport().Target() ); // this is confusing, though... we have been setting left to right otherwise? ? AND it works both ways!
 		
-		ON_wString endIf;
-		endIf.Format(L"endIf\n");
-		RhinoApp().Print( endIf );
 	}
 } // need to setup so this calls everytime at beginning of pipeline
 
@@ -88,6 +85,7 @@ VRSyncViewsConduit::VRSyncViewsConduit() // class constructor ?
 
 void VRSyncViewsConduit::NotifyConduit( EConduitNotifiers Notify, CRhinoDisplayPipeline& dp)
 {
+
 	if ( (m_pView1 && m_pView1->DisplayPipeline() == 0) ||  // if views empty then bail
 		(m_pView2 && m_pView2->DisplayPipeline() == 0 ) )
 	{
@@ -136,8 +134,8 @@ void VRSyncViewsConduit::NotifyConduit( EConduitNotifiers Notify, CRhinoDisplayP
 			{
 				m_bDirty2 = false;
 		        CClientDC dc( m_pView1 );
-			    if( m_pView1->DisplayPipeline()->DrawFrameBuffer(m_pView1->DisplayAttributes()) )
-				m_pView1->DisplayPipeline()->ShowFrameBuffer( &dc );
+			    if( m_pView1->DisplayPipeline()->DrawFrameBuffer(m_pView1->DisplayAttributes()) ) // breakpoint here on launch command
+					m_pView1->DisplayPipeline()->ShowFrameBuffer( &dc );
 			}
 			else
 			{
