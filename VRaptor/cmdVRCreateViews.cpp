@@ -4,7 +4,6 @@
 
 #include "StdAfx.h"
 #include "VRaptorPlugIn.h"
-#include <iostream>
 
 
 ////////////////////////////////////////////////////////////////
@@ -42,8 +41,8 @@ static void SyncVR( CRhinoView* lView, CRhinoView* rView) // not calling continu
 		vp1.SetFrustumAspect( fa );
 
 		lView->Viewport().SetTarget( rView->Viewport().Target() ); // this is confusing, though... we have been setting left to right otherwise? ? AND it works both ways!
-		
 	}
+
 } // need to setup so this calls everytime at beginning of pipeline
 
 class VRSyncViewsConduit: public CRhinoDisplayConduit // class def ?

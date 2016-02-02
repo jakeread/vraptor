@@ -57,6 +57,7 @@ CVRaptorPlugIn& VRaptorPlugIn()
   return thePlugIn; 
 }
 
+
 CVRaptorPlugIn::CVRaptorPlugIn()
 {
   // Description:
@@ -81,6 +82,103 @@ CVRaptorPlugIn::~CVRaptorPlugIn()
 
   // TODO: Add destruction code here
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// US ///
+
+// shorthand
+CVRaptorPlugIn& VR()
+{
+	return thePlugIn;
+}
+
+bool CVRaptorPlugIn::HMDInit()
+{
+	ON_wString wStr;
+	wStr.Format( L"Now to init hmd.\n" );
+	RhinoApp().Print( wStr );
+
+	ON_wString if1;
+	if1.Format( L"initFailed1\n" );
+	ON_wString if2;
+	if2.Format( L"initFailed2\n");
+	ON_wString finInit;
+	finInit.Format( L"HMDInit()fin\n" );
+
+	ovrResult result = ovr_Initialize(nullptr);
+	if(OVR_FAILURE(result))
+	{
+		RhinoApp().Print(if1);
+		return false;
+	}
+
+	result = ovr_Create(&hmdSession, &luid);
+	if(OVR_FAILURE(result))
+	{
+		ovr_Shutdown();
+		RhinoApp().Print(if2);
+		return false;
+	}
+
+	desc = ovr_GetHmdDesc(hmdSession);
+	resolution = desc.Resolution;
+	RhinoApp().Print( L"resolution.h = %i \n", resolution.h); // is int
+	RhinoApp().Print( L"resolution.w = %i \n", resolution.w);
+
+	float refresh = desc.DisplayRefreshRate;
+	RhinoApp().Print( L"DisplayRefreshRate = %f \n", refresh);
+
+	unsigned int availableCaps = desc.AvailableTrackingCaps; // Capability bits described by ovrTrackingCaps which the HMD currently supports.
+	unsigned int defaultCaps = desc.DefaultTrackingCaps; // Default capability bits described by ovrTrackingCaps for the current HMD.
+
+	RhinoApp().Print( L"availableCaps, unsigned int = %i \n", availableCaps);
+	RhinoApp().Print( L"defaultCaps, unsigned int = %i \n", defaultCaps);
+
+	RhinoApp().Print( L"setting up Tracking \n");
+
+	unsigned int requiredCaps = 35; // if hmd reports less than this tracking will fail. 
+
+	// setup tracking for this session, ask for 'caps' and set lower 'caps' limit (capability, as per LibOVR)
+	ovr_ConfigureTracking( hmdSession, defaultCaps, requiredCaps);
+
+
+	//////////////// SPLIT HERE ////////////////////
+
+	//////////// and here
+
+	return true;
+}
+
+void CVRaptorPlugIn::HMDPoseUpdate()
+{
+	// Query HMD for current tracking state
+	ovrTrackingState ts = ovr_GetTrackingState(hmdSession, 0.0, false); 
+			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
+			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
+	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
+	{
+		RhinoApp().Print( L"passed Tracking if %i \n");
+		pose = ts.HeadPose.ThePose;
+		RhinoApp().Print( L"ovrPosef.Position = \t \t x %f, y %f, z %f \n", pose.Position.x, pose.Position.y, pose.Position.z);
+		RhinoApp().Print( L"ovrPosef.Orientation = \t \t x %f, y %f, z %f, w %f  (quaternion I believe)\n", pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
+		// RhinoApp().Wait(20); // there's yer problem
+	}
+	else
+	{
+		RhinoApp().Print(L"Unable to poll Oculus Tracking: Please open Oculus Configuration Utility and try again\n");
+	}
+}
+
+void CVRaptorPlugIn::HMDDestroy()
+{
+	ovr_Destroy(hmdSession);
+	ovr_Shutdown();
+
+	ON_wString wStr;
+	wStr.Format( L"HMDDestroy.\n" );
+	RhinoApp().Print( wStr );
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Required overrides

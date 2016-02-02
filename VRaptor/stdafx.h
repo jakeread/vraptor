@@ -78,3 +78,5 @@
 // Rhino Plug-in Linking Pragmas
 #include "C:\Program Files (x86)\Rhino 5.0 x64 SDK\Inc\rhinoSdkPlugInLinkingPragmas.h"
 
+// OVR
+#include <OVR_CAPI_GL.h>

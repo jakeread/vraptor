@@ -26,13 +26,30 @@ public:
   BOOL AddToPlugInHelpMenu() const;
   BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
+  bool HMDInit();
+  void HMDDestroy();
+  void HMDPoseUpdate();
+
+  ovrSession hmdSession;
+  ovrGraphicsLuid luid;
+  ovrHmdDesc desc;
+  ovrSizei resolution;
+
+  ovrPosef pose;
+
 private:
   ON_wString m_plugin_version;
 
   // TODO: Add additional class information here
 };
 
+// there can only be one true RHOVR // where do we define functiones?
+
+
 CVRaptorPlugIn& VRaptorPlugIn();
+
+// this is us, for shorthand 
+CVRaptorPlugIn& VR();
 
 
 
