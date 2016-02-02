@@ -6,7 +6,6 @@
 
 #include "StdAfx.h"
 #include "VRaptorPlugIn.h"
-// OVR Include is in StdAfx.h
 
 
 // do HMDInit in it's own class; we want global access to it. include session, tracking session, updates etc...
@@ -37,12 +36,103 @@ static class CCommandVRHmdInit theVRHmdInitCommand;
 CRhinoCommand::result CCommandVRHmdInit::RunCommand( const CRhinoCommandContext& context )
 {
 	
-	bool setupSuccess = VR().HMDInit();
+	////////////////// BEGIN VIEWS INIT
+	
+	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example
+
+	ON_wString wStr;
+	wStr.Format( L"READY SET\n", EnglishCommandName() );
+	RhinoApp().Print( wStr );
+
+	ON_SimpleArray<CRhinoView*> viewList; // don't know what is up with* this*
+	ON_SimpleArray<ON_UUID> viewportIds;
+	CRhinoView* lView = 0;
+	CRhinoView* rView = 0;
+	ON_SimpleArray<CRhinoView*> lrViews; // will contain our vr views
+
+	int i = 0; // also use this in loops
+	int lr = 0; // use to track 1st and 2nd find
+
+	// builds a list of (current) viewport IDs
+	context.m_doc.GetViewList( viewList, true, false );
+	for ( i = 0; i < viewList.Count(); i ++)
+	{
+		CRhinoView* tempView = viewList[i]; // pull view out -> this is redeclared here, in sample, but not in second loop
+		if (tempView)
+			viewportIds.Append( tempView->ActiveViewportID() );
+	}
+
+	viewList.Empty(); // empty bc we are going to re-build later when new views
+
+	context.m_doc.NewView( ON_3dmView() );
+	context.m_doc.NewView( ON_3dmView() ); // put two new views into doc
+
+	context.m_doc.GetViewList( viewList, true, false);
+	for (i = 0; i < viewList.Count(); i++)
+	{
+		CRhinoView* tempView = viewList[i];
+		if (tempView)
+		{
+			int rc = viewportIds.Search( tempView->ActiveViewportID() ); // returns index of 1st element which satisfies search. returns -1 when no such item found
+			if (rc < 0 ) // if current tempView did not exist prior to this running
+			{
+				if (lr > 0) // and if lr already found 1
+				{
+					rView = tempView; // right is 2nd view we find 
+					break;
+				// so this breaks when we find, and lView is left as the viewList[i] where we found the new viewport, whose ID was not in our list.
+				// and we are left with lView being = viewList[i] at new view
+				}
+				if (lr == 0)
+				{
+					lView = tempView; // left is 1st view
+					lr = 1;
+				}
+			}
+
+			else
+				tempView = 0; // reset lView to null and re-loop
+		}
+	}
+
+	lrViews.Append(lView);
+	lrViews.Append(rView);
+
+	if (lView && rView)
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			// 			RhinoApp().ActiveView()->
+			ON_3dmView onView = lrViews[i]->ActiveViewport().View();
+
+			if(i == 0)
+				onView.m_name = L"lView";
+				//lrViews[i]->MoveWindow(0,0,VR().resolution.w/2,VR().resolution.h, true);
+			if(i == 1)
+				onView.m_name = L"rView";
+				//lrViews[i]->MoveWindow(960,0,VR().resolution.w/2,VR().resolution.h, true);
+			lrViews[i]->ActiveViewport().SetView(onView);
+			lrViews[i]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
+			lrViews[i]->FloatRhinoView(true);
+			lrViews[i]->Redraw();
+		}
+	}
+
+	VR().lView = lView;
+	VR().rView = rView;
+
+	//////////////////////////////// END VIEWS INIT
+
+	//////////// HMD / OVR INIT
+
+	bool hmdSetupSuccess = VR().HMDInit();
+
 	for (int i=0; i<100; i++){
 		VR().HMDPoseUpdate();
 	}
-	VR().HMDDestroy();
-	if(setupSuccess)
+
+
+	if(hmdSetupSuccess)
 	{
 		ON_wString prnt1;
 		prnt1.Format("Successful end VRHmdInit\n");

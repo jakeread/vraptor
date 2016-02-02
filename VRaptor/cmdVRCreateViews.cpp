@@ -14,7 +14,7 @@
 
 static void SyncVR( CRhinoView* lView, CRhinoView* rView) // not calling continuously. much else to add; re:conduits ... pull from example. werk till it werks. then OVRintegration
 {
-
+	VR().HMDPoseUpdate();
 	if (lView && rView) 
 	{ // first we will make it sync the two views as in example
 
@@ -105,14 +105,14 @@ void VRSyncViewsConduit::NotifyConduit( EConduitNotifiers Notify, CRhinoDisplayP
 				if ( (pActiveView == m_pView1) && (m_pView == m_pView1) ) // if active is the one we are syncing with if m_pView ? where u declare eh?
 				{
 					m_hWnd1 = m_pView1->m_hWnd; // look up m_hWnd, m_pView, m_bDirty. Rhino native types.
-					SyncVR( m_pView1, m_pView2); // or l to r
+					//SyncVR( m_pView1, m_pView2); // or l to r
 					m_bDirty1 = true;			// m_pView "The view that the conduit is working with at the time of ExecConduit"
 					m_bDirty2 = false;			// m_hWnd is a mystery.
 				}								// so is m_bDirty
 				else if ( (pActiveView == m_pView2) && (m_pView == m_pView2) )
 				{
 					m_hWnd2 = m_pView2->m_hWnd;
-					SyncVR( m_pView2, m_pView1); // or r to l
+					//SyncVR( m_pView2, m_pView1); // or r to l
 					m_bDirty2 = true;
 					m_bDirty1 = false;
 				}
@@ -250,23 +250,28 @@ CRhinoCommand::result CCommandVRCreateViews::RunCommand( const CRhinoCommandCont
 	{
 		for (int i = 0; i < 2; i++)
 		{
+			// 			RhinoApp().ActiveView()->
 			ON_3dmView onView = lrViews[i]->ActiveViewport().View();
+
 			if(i == 0)
 				onView.m_name = L"lView";
+				//lrViews[i]->MoveWindow(0,0,VR().resolution.w/2,VR().resolution.h, true);
 			if(i == 1)
 				onView.m_name = L"rView";
+				//lrViews[i]->MoveWindow(960,0,VR().resolution.w/2,VR().resolution.h, true);
 			lrViews[i]->ActiveViewport().SetView(onView);
 			lrViews[i]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
 			lrViews[i]->ActiveViewport().m_v.m_vp.SetCameraLocation(locationL);
 			lrViews[i]->FloatRhinoView(true);
-			// lrViews[i]->ActiveViewport().m_v.m_vp.SetTargetPoint(targetSetup); // obvs something is up with setting the target. throws math errors. dir needed perhaps
 			lrViews[i]->Redraw();
 		}
 	}
 
+	VR().lView = lView;
+	VR().rView = rView;
 
 	ON_wString SYNC;
-	SYNC.Format(L"SYNCVRBEGIN\n", EnglishCommandName() );
+	SYNC.Format(L"SYNCVRBEGIN\n" );
 	RhinoApp().Print( SYNC );
 
 	if (vrConduit.IsEnabled()

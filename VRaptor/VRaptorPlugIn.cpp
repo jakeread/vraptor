@@ -97,13 +97,13 @@ bool CVRaptorPlugIn::HMDInit()
 	ON_wString wStr;
 	wStr.Format( L"Now to init hmd.\n" );
 	RhinoApp().Print( wStr );
-
 	ON_wString if1;
 	if1.Format( L"initFailed1\n" );
 	ON_wString if2;
 	if2.Format( L"initFailed2\n");
 	ON_wString finInit;
 	finInit.Format( L"HMDInit()fin\n" );
+
 
 	ovrResult result = ovr_Initialize(nullptr);
 	if(OVR_FAILURE(result))
@@ -141,10 +141,11 @@ bool CVRaptorPlugIn::HMDInit()
 	// setup tracking for this session, ask for 'caps' and set lower 'caps' limit (capability, as per LibOVR)
 	ovr_ConfigureTracking( hmdSession, defaultCaps, requiredCaps);
 
-
-	//////////////// SPLIT HERE ////////////////////
-
-	//////////// and here
+	const  ovrVector3f hmdToEyeViewOffsetRaptor[] =
+	{ // left and right, probably vectors pointing from headPose
+	ovr_GetRenderDesc( hmdSession, ovrEye_Left, desc.DefaultEyeFov[0]).HmdToEyeViewOffset, 
+	ovr_GetRenderDesc( hmdSession, ovrEye_Right, desc.DefaultEyeFov[1]).HmdToEyeViewOffset
+	}; // the above should really call in the constructor. so should (probably) much else...
 
 	return true;
 }
@@ -162,6 +163,9 @@ void CVRaptorPlugIn::HMDPoseUpdate()
 		RhinoApp().Print( L"ovrPosef.Position = \t \t x %f, y %f, z %f \n", pose.Position.x, pose.Position.y, pose.Position.z);
 		RhinoApp().Print( L"ovrPosef.Orientation = \t \t x %f, y %f, z %f, w %f  (quaternion I believe)\n", pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
 		// RhinoApp().Wait(20); // there's yer problem
+		ovr_CalcEyePoses(ts.HeadPose.ThePose, hmdToEyeViewOffsetRaptor, outEyePosesRaptor);
+		//ovr_GetEyePoses(hmdSession, 0, false, hmdToEyeViewOffsetRaptor, outEyePosesRaptor, &ts );
+		RhinoApp().Print( L"VR().outEyePoses now updated (?) successfully (?) = \t \t eye1 %f \t \t eye2 %f", outEyePosesRaptor[0].Position.y, outEyePosesRaptor[1].Position.y);
 	}
 	else
 	{
@@ -177,6 +181,16 @@ void CVRaptorPlugIn::HMDDestroy()
 	ON_wString wStr;
 	wStr.Format( L"HMDDestroy.\n" );
 	RhinoApp().Print( wStr );
+}
+
+void CVRaptorPlugIn::HMDViewUpdate()
+{
+	VR().HMDPoseUpdate();
+	ON_3dPoint location = ON_3dPoint(pose.Position.x, pose.Position.y, pose.Position.z);
+	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(location);
+	lView->Redraw();
+	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(location);
+	rView->Redraw();
 }
 
 

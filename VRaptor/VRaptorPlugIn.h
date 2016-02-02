@@ -36,6 +36,15 @@ public:
   ovrSizei resolution;
 
   ovrPosef pose;
+  ovrPosef headPose;
+
+  const ovrVector3f hmdToEyeViewOffsetRaptor[2];
+  ovrPosef outEyePosesRaptor[2]; // left and right.. final
+
+  CRhinoView* lView;
+  CRhinoView* rView;
+
+  void HMDViewUpdate();
 
 private:
   ON_wString m_plugin_version;
