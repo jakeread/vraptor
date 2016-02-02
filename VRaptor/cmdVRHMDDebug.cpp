@@ -32,10 +32,12 @@ static class CCommandVRHMDDebug theVRHMDDebugCommand;
 CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext& context )
 {
 	ON_wString wStr;
-	wStr.Format( L"HMD DEBUG.\n");
+	wStr.Format( L"HMD DEBUG \n");
 	RhinoApp().Print( wStr );
 
-	VR().HMDViewUpdate();
+	RhinoApp().Print( "VR().hmdToEyeViewOffsetRaptor[0] %f %f %f \n", VR().hmdToEyeViewOffsetRaptor[0].x, VR().hmdToEyeViewOffsetRaptor[0].y, VR().hmdToEyeViewOffsetRaptor[0].z);
+	RhinoApp().Print( "VR().hmdToEyeViewOffsetRaptor[1] %f %f %f \n", VR().hmdToEyeViewOffsetRaptor[1].x, VR().hmdToEyeViewOffsetRaptor[1].y, VR().hmdToEyeViewOffsetRaptor[1].z);
+
 
 	return CRhinoCommand::success;
 }

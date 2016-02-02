@@ -13,27 +13,27 @@
 
 #pragma region VRHmdInit command
 
-class CCommandVRHmdInit : public CRhinoCommand
+class CCommandVRHMDInit : public CRhinoCommand
 {
 public:
-	CCommandVRHmdInit() {}
-	~CCommandVRHmdInit() {}
+	CCommandVRHMDInit() {}
+	~CCommandVRHMDInit() {}
 	UUID CommandUUID()
 	{
 		// {CD2317C9-7C38-4AD4-802F-6409B7D20303}
-		static const GUID VRHmdInitCommand_UUID =
+		static const GUID VRHMDInitCommand_UUID =
 		{ 0xCD2317C9, 0x7C38, 0x4AD4, { 0x80, 0x2F, 0x64, 0x09, 0xB7, 0xD2, 0x03, 0x03 } };
-		return VRHmdInitCommand_UUID;
+		return VRHMDInitCommand_UUID;
 	}
-	const wchar_t* EnglishCommandName() { return L"VRHmdInit"; }
-	const wchar_t* LocalCommandName() const { return L"VRHmdInit"; }
+	const wchar_t* EnglishCommandName() { return L"VRHMDInit"; }
+	const wchar_t* LocalCommandName() const { return L"VRHMDInit"; }
 	CRhinoCommand::result RunCommand( const CRhinoCommandContext& );
 };
 
-// The one and only CCommandVRHmdInit object
-static class CCommandVRHmdInit theVRHmdInitCommand;
+// The one and only CCommandVRHMDInit object
+static class CCommandVRHMDInit theVRHMDInitCommand;
 
-CRhinoCommand::result CCommandVRHmdInit::RunCommand( const CRhinoCommandContext& context )
+CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext& context )
 {
 	
 	////////////////// BEGIN VIEWS INIT
@@ -113,7 +113,7 @@ CRhinoCommand::result CCommandVRHmdInit::RunCommand( const CRhinoCommandContext&
 				//lrViews[i]->MoveWindow(960,0,VR().resolution.w/2,VR().resolution.h, true);
 			lrViews[i]->ActiveViewport().SetView(onView);
 			lrViews[i]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
-			lrViews[i]->FloatRhinoView(true);
+			//lrViews[i]->FloatRhinoView(true);
 			lrViews[i]->Redraw();
 		}
 	}
@@ -127,22 +127,22 @@ CRhinoCommand::result CCommandVRHmdInit::RunCommand( const CRhinoCommandContext&
 
 	bool hmdSetupSuccess = VR().HMDInit();
 
-	for (int i=0; i<100; i++){
-		VR().HMDPoseUpdate();
-	}
+	//for (int i=0; i<100; i++){
+	//	VR().HMDPrintUpdate();
+	//}
 
 
 	if(hmdSetupSuccess)
 	{
 		ON_wString prnt1;
-		prnt1.Format("Successful end VRHmdInit\n");
+		prnt1.Format("Successful end VRHMDInit\n");
 		RhinoApp().Print(prnt1);
 		return CRhinoCommand::success;
 	}
 	else
 	{
 		ON_wString prnt1;
-		prnt1.Format("Unsuccessful fin to VRHmdInit\n");
+		prnt1.Format("Unsuccessful fin to VRHMDInit\n");
 		RhinoApp().Print(prnt1);
 		return CRhinoCommand::failure;
 	}
@@ -153,7 +153,7 @@ CRhinoCommand::result CCommandVRHmdInit::RunCommand( const CRhinoCommandContext&
 #pragma endregion
 
 //
-// END VRHmdInit command
+// END VRHMDInit command
 //
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////

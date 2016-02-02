@@ -28,7 +28,8 @@ public:
 
   bool HMDInit();
   void HMDDestroy();
-  void HMDPoseUpdate();
+  void HMDPrintUpdate();
+  void HMDViewsUpdate();
 
   ovrSession hmdSession;
   ovrGraphicsLuid luid;
@@ -38,13 +39,15 @@ public:
   ovrPosef pose;
   ovrPosef headPose;
 
-  const ovrVector3f hmdToEyeViewOffsetRaptor[2];
+  ovrVector3f hmdToEyeViewOffsetRaptor[2]; // is - const - in OVR example so don't fuck with
   ovrPosef outEyePosesRaptor[2]; // left and right.. final
 
   CRhinoView* lView;
   CRhinoView* rView;
 
-  void HMDViewUpdate();
+  ON_3dPoint lLocation;
+  ON_3dPoint rLocation;
+
 
 private:
   ON_wString m_plugin_version;

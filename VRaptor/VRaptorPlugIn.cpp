@@ -141,16 +141,18 @@ bool CVRaptorPlugIn::HMDInit()
 	// setup tracking for this session, ask for 'caps' and set lower 'caps' limit (capability, as per LibOVR)
 	ovr_ConfigureTracking( hmdSession, defaultCaps, requiredCaps);
 
-	const  ovrVector3f hmdToEyeViewOffsetRaptor[] =
-	{ // left and right, probably vectors pointing from headPose
-	ovr_GetRenderDesc( hmdSession, ovrEye_Left, desc.DefaultEyeFov[0]).HmdToEyeViewOffset, 
-	ovr_GetRenderDesc( hmdSession, ovrEye_Right, desc.DefaultEyeFov[1]).HmdToEyeViewOffset
-	}; // the above should really call in the constructor. so should (probably) much else...
+	hmdToEyeViewOffsetRaptor[0] = ovr_GetRenderDesc( hmdSession, ovrEye_Left, desc.DefaultEyeFov[0]).HmdToEyeViewOffset;
+	hmdToEyeViewOffsetRaptor[1] = ovr_GetRenderDesc( hmdSession, ovrEye_Right, desc.DefaultEyeFov[1]).HmdToEyeViewOffset;
+	 // the above should really call in the constructor. so should (probably) much else...
+
+	RhinoApp().Print( L"desc.DefaultEyeFov[0].UpTan %f \t desc.DefaulEyeFov[1].UpTan %f \n", desc.DefaultEyeFov[0].UpTan, desc.DefaultEyeFov[1].UpTan);
+	RhinoApp().Print( L"hmdToEyeViewoffsetRaptor[0] %f %f %f\n", hmdToEyeViewOffsetRaptor[0].x, hmdToEyeViewOffsetRaptor[0].y, hmdToEyeViewOffsetRaptor[0].z);
+	RhinoApp().Print( L"hmdToEyeViewoffsetRaptor[1] %f %f %f\n", hmdToEyeViewOffsetRaptor[1].x, hmdToEyeViewOffsetRaptor[1].y, hmdToEyeViewOffsetRaptor[1].z);
 
 	return true;
 }
 
-void CVRaptorPlugIn::HMDPoseUpdate()
+void CVRaptorPlugIn::HMDPrintUpdate()
 {
 	// Query HMD for current tracking state
 	ovrTrackingState ts = ovr_GetTrackingState(hmdSession, 0.0, false); 
@@ -158,14 +160,17 @@ void CVRaptorPlugIn::HMDPoseUpdate()
 			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
 	{
-		RhinoApp().Print( L"passed Tracking if %i \n");
-		pose = ts.HeadPose.ThePose;
-		RhinoApp().Print( L"ovrPosef.Position = \t \t x %f, y %f, z %f \n", pose.Position.x, pose.Position.y, pose.Position.z);
-		RhinoApp().Print( L"ovrPosef.Orientation = \t \t x %f, y %f, z %f, w %f  (quaternion I believe)\n", pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
-		// RhinoApp().Wait(20); // there's yer problem
-		ovr_CalcEyePoses(ts.HeadPose.ThePose, hmdToEyeViewOffsetRaptor, outEyePosesRaptor);
-		//ovr_GetEyePoses(hmdSession, 0, false, hmdToEyeViewOffsetRaptor, outEyePosesRaptor, &ts );
-		RhinoApp().Print( L"VR().outEyePoses now updated (?) successfully (?) = \t \t eye1 %f \t \t eye2 %f", outEyePosesRaptor[0].Position.y, outEyePosesRaptor[1].Position.y);
+		//RhinoApp().Print( L"passed Tracking if \n");
+		//pose = ts.HeadPose.ThePose;
+		//RhinoApp().Print( L"ovrPosef.Position = \t \t x %f, y %f, z %f \n", pose.Position.x, pose.Position.y, pose.Position.z);
+		//RhinoApp().Print( L"ovrPosef.Orientation = \t \t x %f, y %f, z %f, w %f \n", pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
+
+		ovr_CalcEyePoses(ts.HeadPose.ThePose, hmdToEyeViewOffsetRaptor, outEyePosesRaptor); // yall got 0's in your offset vector
+
+		RhinoApp().Print( L"outEyePosesRaptor[0] %f %f %f\n", outEyePosesRaptor[0].Position.x, outEyePosesRaptor[0].Position.y, outEyePosesRaptor[0].Position.z);
+		RhinoApp().Print( L"outEyePosesRaptor[1] %f %f %f\n", outEyePosesRaptor[1].Position.x, outEyePosesRaptor[1].Position.y, outEyePosesRaptor[1].Position.z);
+
+		//RhinoApp().Print( L"\t eye1.x %f \t eye2.x %f\n\t eye1.y %f \t eye2.y %f \n", outEyePosesRaptor[0].Position.x, outEyePosesRaptor[1].Position.x, outEyePosesRaptor[0].Position.y, outEyePosesRaptor[1].Position.y);
 	}
 	else
 	{
@@ -183,14 +188,16 @@ void CVRaptorPlugIn::HMDDestroy()
 	RhinoApp().Print( wStr );
 }
 
-void CVRaptorPlugIn::HMDViewUpdate()
+void CVRaptorPlugIn::HMDViewsUpdate()
 {
-	VR().HMDPoseUpdate();
-	ON_3dPoint location = ON_3dPoint(pose.Position.x, pose.Position.y, pose.Position.z);
-	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(location);
+	HMDPrintUpdate(); // to update all vals
+	lLocation = ON_3dPoint(outEyePosesRaptor[0].Position.x, outEyePosesRaptor[0].Position.y, outEyePosesRaptor[0].Position.z);
+	rLocation = ON_3dPoint(outEyePosesRaptor[1].Position.x, outEyePosesRaptor[1].Position.y, outEyePosesRaptor[1].Position.z);
+	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(lLocation);
 	lView->Redraw();
-	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(location);
+	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(rLocation);
 	rView->Redraw();
+	RhinoApp().Wait(40);
 }
 
 
