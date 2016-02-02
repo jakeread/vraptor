@@ -30,6 +30,7 @@ public:
   void HMDDestroy();
   void HMDPrintUpdate();
   void HMDViewsUpdate();
+  void OVRtoRHCams(ovrPosef pose[2]);
 
   ovrSession hmdSession;
   ovrGraphicsLuid luid;
@@ -45,8 +46,11 @@ public:
   CRhinoView* lView;
   CRhinoView* rView;
 
-  ON_3dPoint lLocation;
-  ON_3dPoint rLocation;
+  float scaleMult;
+
+  ON_3dPoint camLoc[2];
+  ON_3dVector camDir[2];
+  ON_3dVector camUp[2];
 
 
 private:

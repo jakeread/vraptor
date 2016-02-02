@@ -80,3 +80,4 @@
 
 // OVR
 #include <OVR_CAPI_GL.h>
+#include <OVR_Math.h>

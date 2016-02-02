@@ -149,6 +149,8 @@ bool CVRaptorPlugIn::HMDInit()
 	RhinoApp().Print( L"hmdToEyeViewoffsetRaptor[0] %f %f %f\n", hmdToEyeViewOffsetRaptor[0].x, hmdToEyeViewOffsetRaptor[0].y, hmdToEyeViewOffsetRaptor[0].z);
 	RhinoApp().Print( L"hmdToEyeViewoffsetRaptor[1] %f %f %f\n", hmdToEyeViewOffsetRaptor[1].x, hmdToEyeViewOffsetRaptor[1].y, hmdToEyeViewOffsetRaptor[1].z);
 
+	scaleMult = 10; // scaling all HMD Positions
+
 	return true;
 }
 
@@ -188,16 +190,35 @@ void CVRaptorPlugIn::HMDDestroy()
 	RhinoApp().Print( wStr );
 }
 
+void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // cam, 0 or 1, to access location, direction, up arrays
+{
+	for (int i = 0; i< 2; i++)
+	{
+		// ok, take pose and decomp into location
+		// camLocation[]
+		camLoc[i] = ON_3dPoint(pose[i].Position.x * scaleMult, pose[i].Position.y * scaleMult, pose[i].Position.z * scaleMult);
+
+		// OK time to figure this next piece... for now, to shred:
+		//OVR::Quatf::GetEulerAngles<>
+
+		//camDir[i] = ON_3dVector(pose[i].Orientation.
+		// and then we will be taking orientation quaternion and pulling into a direction vector 
+		// and a 'camera up' which we need to read up on some
+	}
+}
+
 void CVRaptorPlugIn::HMDViewsUpdate()
 {
 	HMDPrintUpdate(); // to update all vals
-	lLocation = ON_3dPoint(outEyePosesRaptor[0].Position.x, outEyePosesRaptor[0].Position.y, outEyePosesRaptor[0].Position.z);
-	rLocation = ON_3dPoint(outEyePosesRaptor[1].Position.x, outEyePosesRaptor[1].Position.y, outEyePosesRaptor[1].Position.z);
-	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(lLocation);
+	OVRtoRHCams(outEyePosesRaptor);
+
+	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
+	//lView->ActiveViewport().m_v.m_vp.SetCameraDirection();
+	//lView->ActiveViewport().m_v.m_vp.SetCameraUp();
 	lView->Redraw();
-	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(rLocation);
+	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[1]);
 	rView->Redraw();
-	RhinoApp().Wait(40);
+	RhinoApp().Wait(16); // so approximately 60fps; that's not a lot of milliseconds! 
 }
 
 
