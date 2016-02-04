@@ -28,6 +28,10 @@ public:
 	const wchar_t* EnglishCommandName() { return L"VRHMDInit"; }
 	const wchar_t* LocalCommandName() const { return L"VRHMDInit"; }
 	CRhinoCommand::result RunCommand( const CRhinoCommandContext& );
+
+public:
+	CVRConduit vrConduitLeft;
+	CVRConduit vrConduitRight;
 };
 
 // The one and only CCommandVRHMDInit object
@@ -127,9 +131,15 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 
 	bool hmdSetupSuccess = VR().HMDInit();
 
-	//for (int i=0; i<100; i++){
-	//	VR().HMDPrintUpdate();
-	//}
+	/////////////////////////// PIPELINE INIT
+
+	rView->Redraw();
+
+	vrConduitLeft.Bind( *lView);
+	vrConduitRight.Bind( *rView);
+
+	vrConduitLeft.Enable();
+	vrConduitRight.Enable();
 
 
 	if(hmdSetupSuccess)

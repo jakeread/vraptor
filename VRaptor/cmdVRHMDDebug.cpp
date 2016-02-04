@@ -35,9 +35,10 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	wStr.Format( L"HMD DEBUG \n");
 	RhinoApp().Print( wStr );
 
-	RhinoApp().Print( "VR().hmdToEyeViewOffsetRaptor[0] %f %f %f \n", VR().hmdToEyeViewOffsetRaptor[0].x, VR().hmdToEyeViewOffsetRaptor[0].y, VR().hmdToEyeViewOffsetRaptor[0].z);
-	RhinoApp().Print( "VR().hmdToEyeViewOffsetRaptor[1] %f %f %f \n", VR().hmdToEyeViewOffsetRaptor[1].x, VR().hmdToEyeViewOffsetRaptor[1].y, VR().hmdToEyeViewOffsetRaptor[1].z);
-
+	for(int i=0; i<2000; i++)
+	{
+		VR().HMDViewsUpdate();
+	}
 
 	return CRhinoCommand::success;
 }

@@ -12,51 +12,83 @@
 class CVRaptorPlugIn : public CRhinoUtilityPlugIn
 {
 public:
-  CVRaptorPlugIn();
-  ~CVRaptorPlugIn();
+	CVRaptorPlugIn();
+	~CVRaptorPlugIn();
 
-  // Required overrides
-  const wchar_t* PlugInName() const;
-  const wchar_t* PlugInVersion() const;
-  GUID PlugInID() const;
-  BOOL OnLoadPlugIn();
-  void OnUnloadPlugIn();
+// Required overrides
+	const wchar_t* PlugInName() const;
+	const wchar_t* PlugInVersion() const;
+	GUID PlugInID() const;
+	BOOL OnLoadPlugIn();
+	void OnUnloadPlugIn();
 
-  // Online help overrides
-  BOOL AddToPlugInHelpMenu() const;
-  BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
+// Online help overrides
+	BOOL AddToPlugInHelpMenu() const;
+	BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
-  bool HMDInit();
-  void HMDDestroy();
-  void HMDPrintUpdate();
-  void HMDViewsUpdate();
-  void OVRtoRHCams(ovrPosef pose[2]);
+	bool HMDInit();
+	void HMDDestroy();
+	void HMDPrintUpdate();
+	void HMDViewsUpdate();
+	void OVRtoRHCams(ovrPosef pose[2]);
 
-  ovrSession hmdSession;
-  ovrGraphicsLuid luid;
-  ovrHmdDesc desc;
-  ovrSizei resolution;
+	ovrSession hmdSession;
+	ovrGraphicsLuid luid;
+	ovrHmdDesc desc;
+	ovrSizei resolution;
 
-  ovrPosef pose;
-  ovrPosef headPose;
+	CRhinoView* lView;
+	CRhinoView* rView;
 
-  ovrVector3f hmdToEyeViewOffsetRaptor[2]; // is - const - in OVR example so don't fuck with
-  ovrPosef outEyePosesRaptor[2]; // left and right.. final
+private:
 
-  CRhinoView* lView;
-  CRhinoView* rView;
+	void OVRDoTracking();
 
-  float scaleMult;
+	ovrTrackingState ts;
 
-  ON_3dPoint camLoc[2];
-  ON_3dVector camDir[2];
-  ON_3dVector camUp[2];
+	ovrVector3f hmdToEyeViewOffsetRaptor[2]; // is - const - in OVR example so don't fuck with
+	ovrPosef tsEyePoses[2]; // left and right.. final
 
+// vals req'd for cam resets
+
+	OVR::Quat<float> eyePoseQuats[2];
+	ON_3dVector upBase;
+	ON_3dVector dirBase;
+	OVR::Vector3<float> rotationVector;
+ 
+/// cams 
+
+	ON_3dPoint camLoc[2];
+	ON_3dVector camDir[2];
+	ON_3dVector camUp[2];
+
+//// OTHERS
+	float scaleMult;
 
 private:
   ON_wString m_plugin_version;
 
   // TODO: Add additional class information here
+};
+
+class CVRConduit: public CRhinoDisplayConduit // really this one should be in the header
+{
+public:
+	CVRConduit();
+
+	bool ExecConduit(
+		CRhinoDisplayPipeline&,	// pipeline executing this conduit
+		UINT,					// current channel in pipeline
+		bool&					// channel termination flag
+		);
+
+	void NotifyConduit(
+		EConduitNotifiers,		// event reported by display pipeline
+		CRhinoDisplayPipeline&	// pipeline calling this conduit
+		);
+
+public:
+
 };
 
 // there can only be one true RHOVR // where do we define functiones?
@@ -66,6 +98,5 @@ CVRaptorPlugIn& VRaptorPlugIn();
 
 // this is us, for shorthand 
 CVRaptorPlugIn& VR();
-
 
 

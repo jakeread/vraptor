@@ -92,6 +92,9 @@ CVRaptorPlugIn& VR()
 	return thePlugIn;
 }
 
+///////////
+// UTILITY
+
 bool CVRaptorPlugIn::HMDInit()
 {
 	ON_wString wStr;
@@ -149,35 +152,17 @@ bool CVRaptorPlugIn::HMDInit()
 	RhinoApp().Print( L"hmdToEyeViewoffsetRaptor[0] %f %f %f\n", hmdToEyeViewOffsetRaptor[0].x, hmdToEyeViewOffsetRaptor[0].y, hmdToEyeViewOffsetRaptor[0].z);
 	RhinoApp().Print( L"hmdToEyeViewoffsetRaptor[1] %f %f %f\n", hmdToEyeViewOffsetRaptor[1].x, hmdToEyeViewOffsetRaptor[1].y, hmdToEyeViewOffsetRaptor[1].z);
 
-	scaleMult = 10; // scaling all HMD Positions
+	scaleMult = 100; // scaling all HMD Positions
+
+	dirBase = ON_3dVector(0.0, 1.0, 0.0);
+	upBase = ON_3dVector(0.0, 0.0, 1.0);
 
 	return true;
 }
 
 void CVRaptorPlugIn::HMDPrintUpdate()
 {
-	// Query HMD for current tracking state
-	ovrTrackingState ts = ovr_GetTrackingState(hmdSession, 0.0, false); 
-			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
-			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
-	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
-	{
-		//RhinoApp().Print( L"passed Tracking if \n");
-		//pose = ts.HeadPose.ThePose;
-		//RhinoApp().Print( L"ovrPosef.Position = \t \t x %f, y %f, z %f \n", pose.Position.x, pose.Position.y, pose.Position.z);
-		//RhinoApp().Print( L"ovrPosef.Orientation = \t \t x %f, y %f, z %f, w %f \n", pose.Orientation.x, pose.Orientation.y, pose.Orientation.z, pose.Orientation.w);
-
-		ovr_CalcEyePoses(ts.HeadPose.ThePose, hmdToEyeViewOffsetRaptor, outEyePosesRaptor); // yall got 0's in your offset vector
-
-		RhinoApp().Print( L"outEyePosesRaptor[0] %f %f %f\n", outEyePosesRaptor[0].Position.x, outEyePosesRaptor[0].Position.y, outEyePosesRaptor[0].Position.z);
-		RhinoApp().Print( L"outEyePosesRaptor[1] %f %f %f\n", outEyePosesRaptor[1].Position.x, outEyePosesRaptor[1].Position.y, outEyePosesRaptor[1].Position.z);
-
-		//RhinoApp().Print( L"\t eye1.x %f \t eye2.x %f\n\t eye1.y %f \t eye2.y %f \n", outEyePosesRaptor[0].Position.x, outEyePosesRaptor[1].Position.x, outEyePosesRaptor[0].Position.y, outEyePosesRaptor[1].Position.y);
-	}
-	else
-	{
-		RhinoApp().Print(L"Unable to poll Oculus Tracking: Please open Oculus Configuration Utility and try again\n");
-	}
+	// code here to print all relevant data from class, for debugging
 }
 
 void CVRaptorPlugIn::HMDDestroy()
@@ -190,35 +175,120 @@ void CVRaptorPlugIn::HMDDestroy()
 	RhinoApp().Print( wStr );
 }
 
-void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // cam, 0 or 1, to access location, direction, up arrays
+///////////
+// Runtime
+
+void CVRaptorPlugIn::OVRDoTracking()	// in the future we should set this up to take an absTime function for 
+										// ovr_GetTrackingState to pull
+{
+		// Query HMD for current tracking state
+	ts = ovr_GetTrackingState(hmdSession, 0.0, false); 
+			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
+			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
+	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
+	{
+		// straight to eye poses, big TY to ovr for this offsets maths.
+		ovr_CalcEyePoses(ts.HeadPose.ThePose, hmdToEyeViewOffsetRaptor, tsEyePoses); // yall got 0's in your offset vector
+
+		// setup all relevant values to do next moves
+		// already have all things in ts and tsEyePoses
+		eyePoseQuats[0] = tsEyePoses[0].Orientation; // quaternion class for rotation angle, used later
+		eyePoseQuats[1] = tsEyePoses[1].Orientation;
+
+	}
+	else
+	{
+		RhinoApp().Print(L"Unable to poll Oculus Tracking: Please open Oculus Configuration Utility and try again\n");
+	}
+}
+
+void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePoses 
 {
 	for (int i = 0; i< 2; i++)
 	{
 		// ok, take pose and decomp into location
 		// camLocation[]
-		camLoc[i] = ON_3dPoint(pose[i].Position.x * scaleMult, pose[i].Position.y * scaleMult, pose[i].Position.z * scaleMult);
+		camLoc[i] = scaleMult * ON_3dPoint(pose[i].Position.x, pose[i].Position.y, pose[i].Position.z);
 
-		// OK time to figure this next piece... for now, to shred:
-		//OVR::Quatf::GetEulerAngles<>
+		rotationVector = eyePoseQuats[i].ToRotationVector();
 
-		//camDir[i] = ON_3dVector(pose[i].Orientation.
-		// and then we will be taking orientation quaternion and pulling into a direction vector 
-		// and a 'camera up' which we need to read up on some
+		RhinoApp().Print( L"OVRtoRHCams rotationVector = \t %f \t %f \t %f \n", rotationVector.x, rotationVector.y, rotationVector.x);
+
+		dirBase = ON_3dVector(0.0, 1.0, 0.0);
+		upBase = ON_3dVector(0.0, 0.0, 1.0);
+
+		dirBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, rotationVector.y, rotationVector.z) );
+		upBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, rotationVector.y, rotationVector.z) );
+
+		camDir[i] = dirBase;
+		camUp[i] = upBase; // there's a chance dir and up can be called only once; given parallel eyes
+
+		RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
+		RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
+
+		// then setcams (2nd for, so simulteneous)
+		// then redraw
 	}
+
+	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
+	lView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[0]);
+	lView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[0]);
+
+	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[1]);
+	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
+	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
+	
+	lView->Redraw();
+	rView->Redraw();
 }
 
 void CVRaptorPlugIn::HMDViewsUpdate()
 {
-	HMDPrintUpdate(); // to update all vals
-	OVRtoRHCams(outEyePosesRaptor);
+	OVRDoTracking(); // to update all vals
+	OVRtoRHCams(tsEyePoses);
 
-	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
-	//lView->ActiveViewport().m_v.m_vp.SetCameraDirection();
-	//lView->ActiveViewport().m_v.m_vp.SetCameraUp();
-	lView->Redraw();
-	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[1]);
-	rView->Redraw();
 	RhinoApp().Wait(16); // so approximately 60fps; that's not a lot of milliseconds! 
+}
+
+///////////////////////////////////////////////
+// MFING Pipeline
+
+CVRConduit::CVRConduit()
+: CRhinoDisplayConduit( CSupportChannels::SC_INITFRAMEBUFFER ) // set notifying channel?
+{
+	RhinoApp().Print(L"Conduits: \t CVRConduit Constructor \n");
+	// do init on conduit
+}
+
+
+void CVRConduit::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& dp)
+{
+	// do shit when conduit is notified: with incoming Notify Tag
+
+	switch( Notify )
+	{
+		case CN_PROJECTIONCHANGED:
+			{
+				ON_wString name;
+				name.Format( this->m_pView->ActiveViewport().Name() );
+				RhinoApp().Print(L"Conduits: \t NotifyConduit case CN_PORJECTIONCHANGED at ");
+				RhinoApp().Print( name  );
+				RhinoApp().Print(L"\n"); // ok great success. now figure firing order and implement ovr moves at fin? begin? of pipeline ? timing? swage.
+			}
+	}
+
+}
+
+bool CVRConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTerminate)
+{
+	// do shit when conduit it executed?
+  switch( nChannel )
+  {
+	  RhinoApp().Print(L"Conduits: \t ExecConduit top of Switch");
+  case CSupportChannels::SC_INITFRAMEBUFFER: // ah: incoming nChannel is one of these SC_FLAGS and we watch for INITFRAMEBUFFER
+	  break;
+  }
+  return true;
 }
 
 
