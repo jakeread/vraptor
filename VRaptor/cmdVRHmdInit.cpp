@@ -145,7 +145,7 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 	VR().HMDRenderInit();
 
 
-	//////////////////////////// FIRE IN THE HOLE
+	//////////////////////////// FIRE IN THE HOLE (right only for now)
 	//vrConduitLeft.Enable();
 	vrConduitRight.Enable();
 

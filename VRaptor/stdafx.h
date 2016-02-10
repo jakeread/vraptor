@@ -79,5 +79,14 @@
 #include "C:\Program Files (x86)\Rhino 5.0 x64 SDK\Inc\rhinoSdkPlugInLinkingPragmas.h"
 
 // OVR
-#include <OVR_CAPI_GL.h>
+//#include <OVR_CAPI_GL.h>
 #include <OVR_Math.h>
+#include <OVR_CAPI_D3D.h>
+
+#include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common/Win32_DirectXAppUtil.h"
+// #include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common//Win32_GLAppUtil.h"
+
+//#ifndef __gl_h_
+//#define __gl_h_
+//#include "LibOVRKernel\Src\GL\CAPI_GLE_GL.h"
+//#endif

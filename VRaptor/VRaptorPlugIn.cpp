@@ -179,12 +179,77 @@ bool CVRaptorPlugIn::HMDRenderInit() // setup for render: making textures, buffe
 
 	// build ovrSwapTextureSet (as pointer)
 
-	ovrSwapTextureSet *pTextureSet = 0;
+	ovrSwapTextureSet * pTextureSet = 0; // 
+	ID3D11RenderTargetView * pTextRtv[2];
 
-	ovr_CreateSwapTextureSetGL(hmdSession, 0x8C43, bufferSize.w, bufferSize.h, &pTextureSet); // causes break. I think bc we do not have GL dependency
+	D3D11_TEXTURE2D_DESC dsDesc;
+
+	dsDesc.Width = bufferSize.w;
+	dsDesc.Height = bufferSize.h;
+	dsDesc.MipLevels = 1;
+	dsDesc.ArraySize = 1;
+	dsDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	dsDesc.SampleDesc.Count = 1;
+	dsDesc.SampleDesc.Quality = 0;
+	dsDesc.Usage = D3D11_USAGE_DEFAULT;
+	dsDesc.CPUAccessFlags = 0;
+	dsDesc.MiscFlags = 0;
+	dsDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+
+	// ok we are trying to call on memory 0; so something is empty in the createSwap function: 
+	// pTextureSet has been initialized so does not live at 0, 
+	// must be DIRECTX.Device. Have to figure out where & how to initialize all of our DIRECTX babies.
+	//DIRECTX.InitDevice(bufferSize.w, bufferSize.h, *pLuid, true);
+	// luid is unique identifier in any windows environment. 
+
+	// READ ABOVE and go to main.cpp in OculusRoomTiny(DX11) at 124. need to boot dx11
+
+	if (ovr_CreateSwapTextureSetD3D11(hmdSession, DIRECTX.Device, &dsDesc, 0, &pTextureSet) == ovrSuccess)
+	{
+		RhinoApp().Print(L"ovr_CreateSwapTextureSetDX\b");
+	}
+	
+	
+
+	////// GL Beginnings, bailed:
+	//ovrSwapTextureSet * pTextureSet = 0;
+	//ovr_CreateSwapTextureSetGL(hmdSession, GL_SRGB8_ALPHA8, bufferSize.w, bufferSize.h, &pTextureSet); // causes break. I think bc we do not have GL dependency
 
 
 	return true;
+}
+
+void CVRaptorPlugIn::D3DRenderInit() // marked for delete: going to try GL again ...
+{
+	OVR::Sizei recommendedTex0Size = ovr_GetFovTextureSize(hmdSession, ovrEye_Left, desc.DefaultEyeFov[0], 1.0f);
+	OVR::Sizei recommendedTex1Size = ovr_GetFovTextureSize(hmdSession, ovrEye_Left, desc.DefaultEyeFov[1], 1.0f);
+
+	OVR::Sizei bufferSize;
+
+	bufferSize.w = recommendedTex0Size.w + recommendedTex1Size.w;
+	bufferSize.h = max(recommendedTex0Size.h, recommendedTex1Size.h);
+
+	ovrSwapTextureSet * pTextureSet = 0;
+	ID3D11RenderTargetView * pTextRtv[3];
+
+	D3D11_TEXTURE2D_DESC dsDesc;
+
+	dsDesc.Width = bufferSize.w;
+	dsDesc.Height = bufferSize.h;
+	dsDesc.MipLevels = 1;
+	dsDesc.ArraySize = 1;
+	dsDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	dsDesc.SampleDesc.Count = 1;
+	dsDesc.SampleDesc.Quality = 0;
+	dsDesc.Usage = D3D11_USAGE_DEFAULT;
+	dsDesc.CPUAccessFlags = 0;
+	dsDesc.MiscFlags = 0;
+	dsDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+
+	if (ovr_CreateSwapTextureSetD3D11(hmdSession, DIRECTX.Device, &dsDesc, 0, &pTextureSet) == ovrSuccess)
+	{
+		RhinoApp().Print(L"ovr_CreateSwapTextureSetDX\b");
+	}
 }
 
 void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
