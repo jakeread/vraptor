@@ -5,6 +5,8 @@
 #include "StdAfx.h"
 #include "VRaptorPlugIn.h"
 
+
+
 // The plug-in object must be constructed before any plug-in classes
 // derived from CRhinoCommand. The #pragma init_seg(lib) ensures that
 // this happens.
@@ -160,6 +162,40 @@ bool CVRaptorPlugIn::HMDInit()
 	return true;
 }
 
+bool CVRaptorPlugIn::HMDRenderInit() // setup for render: making textures, buffers etc..
+{
+	// build texture sizes according to HMD Description
+	OVR::Sizei recommendedTex0Size = ovr_GetFovTextureSize(hmdSession, ovrEye_Left, desc.DefaultEyeFov[0], 1.0f);
+	OVR::Sizei recommendedTex1Size = ovr_GetFovTextureSize(hmdSession, ovrEye_Left, desc.DefaultEyeFov[1], 1.0f);
+
+	OVR::Sizei bufferSize;
+
+	bufferSize.w = recommendedTex0Size.w + recommendedTex1Size.w;
+	bufferSize.h = max(recommendedTex0Size.h, recommendedTex1Size.h);
+
+
+	//// YOU'RE HERE. LOOKING AT HOW TO INTEGRATE gl SO THAT YOU DON'T CRASH WHEN BUILDING WITH 
+	//// ovr_CREATESWAPTEXTURESET and other gl shit I am sure will be necessary
+
+	// build ovrSwapTextureSet (as pointer)
+
+	ovrSwapTextureSet *pTextureSet = 0;
+
+	ovr_CreateSwapTextureSetGL(hmdSession, 0x8C43, bufferSize.w, bufferSize.h, &pTextureSet); // causes break. I think bc we do not have GL dependency
+
+
+	return true;
+}
+
+void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
+{
+	// PLACEHOLDER. NO IDEA WHAT IS GOING TO GO HERE
+	VR().lView->DisplayPipeline()->GetFrameBuffer();
+	VR().rView->DisplayPipeline()->GetFrameBuffer();
+
+	ovrResult       result = ovr_SubmitFrame(hmdSession, 0, nullptr, 0, 0);
+}
+
 void CVRaptorPlugIn::HMDPrintUpdate()
 {
 	// code here to print all relevant data from class, for debugging
@@ -178,7 +214,7 @@ void CVRaptorPlugIn::HMDDestroy()
 ///////////
 // Runtime
 
-void CVRaptorPlugIn::OVRDoTracking()	// in the future we should set this up to take an absTime function for 
+ovrTrackingState CVRaptorPlugIn::OVRDoTracking()	// in the future we should set this up to take an absTime function for 
 										// ovr_GetTrackingState to pull
 {
 		// Query HMD for current tracking state
@@ -200,6 +236,8 @@ void CVRaptorPlugIn::OVRDoTracking()	// in the future we should set this up to t
 	{
 		RhinoApp().Print(L"Unable to poll Oculus Tracking: Please open Oculus Configuration Utility and try again\n");
 	}
+
+	return ts;
 }
 
 void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePoses 
@@ -212,7 +250,7 @@ void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePose
 
 		rotationVector = eyePoseQuats[i].ToRotationVector();
 
-		RhinoApp().Print( L"OVRtoRHCams rotationVector = \t %f \t %f \t %f \n", rotationVector.x, rotationVector.y, rotationVector.x);
+		//RhinoApp().Print( L"OVRtoRHCams rotationVector = \t %f \t %f \t %f \n", rotationVector.x, rotationVector.y, rotationVector.x);
 
 		dirBase = ON_3dVector(0.0, 1.0, 0.0);
 		upBase = ON_3dVector(0.0, 0.0, 1.0);
@@ -223,8 +261,8 @@ void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePose
 		camDir[i] = dirBase;
 		camUp[i] = upBase; // there's a chance dir and up can be called only once; given parallel eyes
 
-		RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
-		RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
+		//RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
+		//RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
 
 		// then setcams (2nd for, so simulteneous)
 		// then redraw
@@ -238,7 +276,7 @@ void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePose
 	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
 	
-	lView->Redraw();
+	lView->Redraw(); // so we will be re-calling immediately -> maybe no bueno
 	rView->Redraw();
 }
 
@@ -246,51 +284,8 @@ void CVRaptorPlugIn::HMDViewsUpdate()
 {
 	OVRDoTracking(); // to update all vals
 	OVRtoRHCams(tsEyePoses);
-
-	RhinoApp().Wait(16); // so approximately 60fps; that's not a lot of milliseconds! 
+	//RhinoApp().Wait(16); // so approximately 60fps; that's not a lot of milliseconds! 
 }
-
-///////////////////////////////////////////////
-// MFING Pipeline
-
-CVRConduit::CVRConduit()
-: CRhinoDisplayConduit( CSupportChannels::SC_INITFRAMEBUFFER ) // set notifying channel?
-{
-	RhinoApp().Print(L"Conduits: \t CVRConduit Constructor \n");
-	// do init on conduit
-}
-
-
-void CVRConduit::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& dp)
-{
-	// do shit when conduit is notified: with incoming Notify Tag
-
-	switch( Notify )
-	{
-		case CN_PROJECTIONCHANGED:
-			{
-				ON_wString name;
-				name.Format( this->m_pView->ActiveViewport().Name() );
-				RhinoApp().Print(L"Conduits: \t NotifyConduit case CN_PORJECTIONCHANGED at ");
-				RhinoApp().Print( name  );
-				RhinoApp().Print(L"\n"); // ok great success. now figure firing order and implement ovr moves at fin? begin? of pipeline ? timing? swage.
-			}
-	}
-
-}
-
-bool CVRConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTerminate)
-{
-	// do shit when conduit it executed?
-  switch( nChannel )
-  {
-	  RhinoApp().Print(L"Conduits: \t ExecConduit top of Switch");
-  case CSupportChannels::SC_INITFRAMEBUFFER: // ah: incoming nChannel is one of these SC_FLAGS and we watch for INITFRAMEBUFFER
-	  break;
-  }
-  return true;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Required overrides

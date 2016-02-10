@@ -122,7 +122,7 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 		}
 	}
 
-	VR().lView = lView;
+	VR().lView = lView; // pass views to our plugin object 
 	VR().rView = rView;
 
 	//////////////////////////////// END VIEWS INIT
@@ -133,13 +133,25 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 
 	/////////////////////////// PIPELINE INIT
 
+	//lView->Redraw();
 	rView->Redraw();
 
-	vrConduitLeft.Bind( *lView);
+	//rView->RecreateHWND(); check this out when trying to do pixels
+
+	//vrConduitLeft.Bind( *lView);
 	vrConduitRight.Bind( *rView);
 
-	vrConduitLeft.Enable();
+	///////////////////////////// HMD RENDER INIT
+	VR().HMDRenderInit();
+
+
+	//////////////////////////// FIRE IN THE HOLE
+	//vrConduitLeft.Enable();
 	vrConduitRight.Enable();
+
+
+
+
 
 
 	if(hmdSetupSuccess)

@@ -35,9 +35,10 @@ CRhinoCommand::result CCommandVRHMDViewsUpdate::RunCommand( const CRhinoCommandC
 	wStr.Format( L"VRHMD Views Update\n", EnglishCommandName() );
 	RhinoApp().Print( wStr );
 
-	for (int i = 0; i<200; i++)
+	for (int i = 0; i<2000; i++)
 	{
 		VR().HMDViewsUpdate();
+		RhinoApp().Wait(16);
 	}
 
 	RhinoApp().Print( wStr );

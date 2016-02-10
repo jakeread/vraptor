@@ -27,9 +27,11 @@ public:
 	BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
 	bool HMDInit();
+	bool HMDRenderInit();
 	void HMDDestroy();
 	void HMDPrintUpdate();
 	void HMDViewsUpdate();
+	void HMDRender();
 	void OVRtoRHCams(ovrPosef pose[2]);
 
 	ovrSession hmdSession;
@@ -42,7 +44,7 @@ public:
 
 private:
 
-	void OVRDoTracking();
+	ovrTrackingState OVRDoTracking();
 
 	ovrTrackingState ts;
 
@@ -90,9 +92,6 @@ public:
 public:
 
 };
-
-// there can only be one true RHOVR // where do we define functiones?
-
 
 CVRaptorPlugIn& VRaptorPlugIn();
 
