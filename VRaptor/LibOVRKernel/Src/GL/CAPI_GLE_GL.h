@@ -2078,7 +2078,7 @@ extern "C" {
     typedef GLboolean (GLAPIENTRY * PFNGLISPROGRAMPROC) (GLuint program);
     typedef GLboolean (GLAPIENTRY * PFNGLISSHADERPROC) (GLuint shader);
     typedef void      (GLAPIENTRY * PFNGLLINKPROGRAMPROC) (GLuint program);
-    typedef void      (GLAPIENTRY * PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar *const* string, const GLint* length);
+	typedef void      (GLAPIENTRY * PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar *const* string, const GLint* length);
     typedef void      (GLAPIENTRY * PFNGLSTENCILFUNCSEPARATEPROC) (GLenum frontfunc, GLenum backfunc, GLint ref, GLuint mask);
     typedef void      (GLAPIENTRY * PFNGLSTENCILMASKSEPARATEPROC) (GLenum face, GLuint mask);
     typedef void      (GLAPIENTRY * PFNGLSTENCILOPSEPARATEPROC) (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
@@ -3638,8 +3638,8 @@ extern "C" {
     #define GL_TIME_ELAPSED 0x88BF
     #define GL_TIMESTAMP 0x8E28
 
-    typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTI64VPROC) (GLuint id, GLenum pname, GLint64* params);
-    typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTUI64VPROC) (GLuint id, GLenum pname, GLuint64* params);
+	typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTI64VPROC) (GLuint id, GLenum pname, GLint64* params);
+	typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTUI64VPROC) (GLuint id, GLenum pname, GLuint64* params);
     typedef void (GLAPIENTRY * PFNGLQUERYCOUNTERPROC) (GLuint id, GLenum target);
 
     #define glGetQueryObjecti64v  GLEGetCurrentFunction(glGetQueryObjecti64v)

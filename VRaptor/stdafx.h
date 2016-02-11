@@ -75,16 +75,20 @@
 #define _DEBUG
 #endif
 
+
 // Rhino Plug-in Linking Pragmas
 #include "C:\Program Files (x86)\Rhino 5.0 x64 SDK\Inc\rhinoSdkPlugInLinkingPragmas.h"
 
 // OVR
-//#include <OVR_CAPI_GL.h>
 #include <OVR_Math.h>
-#include <OVR_CAPI_D3D.h>
+//#include <OVR_CAPI.h>
+#include <OVR_CAPI_GL.h>
 
-#include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common/Win32_DirectXAppUtil.h"
-// #include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common//Win32_GLAppUtil.h"
+// I think a new approach to setting up the rendering is needed. Check the examples, but this file below
+//#include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common//Win32_GLAppUtil.h"
+// is a list of headers for things which SHOULD already exist in Rhino SDK / OpenGL or in OVR_CAPI_GL
+// check out McNeel, OVR tutorials. And finish that table.
+
 
 //#ifndef __gl_h_
 //#define __gl_h_

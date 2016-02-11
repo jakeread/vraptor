@@ -28,7 +28,6 @@ public:
 
 	bool HMDInit();
 	bool HMDRenderInit();
-	void D3DRenderInit();
 	void HMDDestroy();
 	void HMDPrintUpdate();
 	void HMDViewsUpdate();
