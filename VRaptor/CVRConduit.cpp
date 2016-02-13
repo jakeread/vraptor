@@ -53,10 +53,13 @@ bool CVRConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTe
 			RhinoApp().Print(L"GetFrameTick() \t \t %i\n", tick);
 			RhinoApp().Print(L"GetFrameTickDelta() \t %i\n", tickDelta); // not behaving as expected
 			RhinoApp().Print(L"GetFrameEta() \t \t %i\n\n", frameEta);
+
 			//RhinoApp().Wait(16);
 
 			// these two are disabled for now while we init & debug HMD Rendering
 			//VR().HMDViewsUpdate();
+			
+			// how to add wait here ??
 
 			//VR().HMDViewsRender();
 

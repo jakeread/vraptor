@@ -143,9 +143,6 @@ bool CVRaptorPlugIn::HMDInit()
 
 	unsigned int requiredCaps = 35; // if hmd reports less than this tracking will fail. 
 
-	// setup tracking for this session, ask for 'caps' and set lower 'caps' limit (capability, as per LibOVR)
-	ovr_ConfigureTracking( hmdSession, defaultCaps, requiredCaps);
-
 	hmdToEyeViewOffsetRaptor[0] = ovr_GetRenderDesc( hmdSession, ovrEye_Left, desc.DefaultEyeFov[0]).HmdToEyeViewOffset;
 	hmdToEyeViewOffsetRaptor[1] = ovr_GetRenderDesc( hmdSession, ovrEye_Right, desc.DefaultEyeFov[1]).HmdToEyeViewOffset;
 	 // the above should really call in the constructor. so should (probably) much else...
@@ -174,14 +171,248 @@ bool CVRaptorPlugIn::HMDRenderInit() // setup for render: making textures, buffe
 	bufferSize.h = max(recommendedTex0Size.h, recommendedTex1Size.h);
 
 
-	ovrGLTexture * mirrorTexture = nullptr;
+
+
+	// now I think we pull viewport into layer & submitframe ?
+	//DisplayPipeline()->BlitFrameBuffer(CDC *) where CDC * is Current Device Context: an opengl construct
+
+	CRhinoUiDib leftBuffer = VR().lView->ActiveViewport().DisplayPipeline()->GetFrameBuffer();
+	/////////////// Dib is basically a bitmap. we want to figure out how to do this pass in the gpu. this will be cpu
+	// but it'll get us off the ground. maybe
+	CRhinoUiDib rightBuffer = VR().rView->ActiveViewport().DisplayPipeline()->GetFrameBuffer();
+
+	ovrTexture oneOvrTexture = ovrTexture();
+	ovrTexture twoOvrTexture = ovrTexture();
+
+	ovrGLTextureData_s oneOvrGLTextureData_s;
 
 	ovrSwapTextureSet * pTextureSet = 0;
-	//ovr_CreateSwapTextureSetGL(hmdSession, GL_SRGB8_ALPHA8, bufferSize.w, bufferSize.h, &pTextureSet); // causes break. I think bc we do not have GL dependency
-	ovr_CreateMirrorTextureGL(hmdSession, 0x8C43, bufferSize.w, bufferSize.h, reinterpret_cast<ovrTexture**>(&mirrorTexture)); 
+
+	// ovr_CreateSwapTextureSetGL(hmdSession, GL_RGBA, bufferSize.w, bufferSize.h, &pTextureSet); // reinterpret_cast<ovrTexture**>(&mirrorTexture)
+
+	RhinoApp().Print(L"beforeSubmit\n");
+
+	ovrResult resultSubmit = ovr_SubmitFrame(hmdSession, 0, nullptr, 0, 0);
+	if(!OVR_SUCCESS(resultSubmit))
+	{
+		RhinoApp().Print(L"THROWS: Failure at OVR_SubmitFrame\n");
+	}
+
+	// using defined GL_RGBA as in gl.h (rhino include) or use 'magic number' 0x8C43 from OVR Win32GLUtil include.
+	
+	//ovr_CreateMirrorTextureGL(hmdSession, GL_RGBA, bufferSize.w, bufferSize.h, reinterpret_cast<ovrTexture**>(&mirrorTexture)); 
 	// access violation at 00000000000000000000000 is trying to read a nullpointer. setup is bunz. read note in stdafx.h
 
+
+
 	return true;
+}
+
+void CVRaptorPlugIn::HMDFinalThrows()
+{
+	// here we will attmempt a complete re-build of tinyRoomGl to get some oculus on the screen. 4 debug. runs through debug command
+	RhinoApp().Print(L"FINAL THROWS\n");
+	// going to have to watch for includes from Kernal/OVR_System.h (depricated) and 
+
+	ovrHmd HMD;
+	ovrGraphicsLuid luidLuid;
+
+	ovrResult resultInit = ovr_Initialize(nullptr);
+	if(!OVR_SUCCESS(resultInit))
+	{
+		RhinoApp().Print(L"THROWS: Failure at OVR_Initialize\n");
+	}
+
+	ovrResult resultCreate = ovr_Create(&HMD, &luidLuid);
+	if(!OVR_SUCCESS(resultCreate))
+	{
+		RhinoApp().Print(L"THROWS: Failure at ovr_Create\n");
+	}
+
+	ovrHmdDesc hmdDesc = ovr_GetHmdDesc(HMD);
+
+	// build window for mirrortexture, throwing this out..
+
+	for (int eye = 0; eye < 2; ++eye)
+	{
+		ovrSizei idealTextureSize = ovr_GetFovTextureSize(HMD, ovrEyeType(eye), hmdDesc.DefaultEyeFov[eye], 1);
+		// eyeRenderTexture
+		// eyeDepthBuffer
+	}
+
+	// buncha glFrameBuffers etc, from win32
+	// looks like it was for the mirror window...
+
+	ovrEyeRenderDesc EyeRenderDesc[2];
+	EyeRenderDesc[0] = ovr_GetRenderDesc(HMD, ovrEye_Left, hmdDesc.DefaultEyeFov[0]);
+	EyeRenderDesc[1] = ovr_GetRenderDesc(HMD, ovrEye_Right, hmdDesc.DefaultEyeFov[1]);
+
+	// vSync turnt off, win32 call
+
+	// init scene... also no dice for us
+
+
+	// some tracking shit, setting up for render.. timing...
+	ovrVector3f               ViewOffset[2] = { EyeRenderDesc[0].HmdToEyeViewOffset,
+                                                    EyeRenderDesc[1].HmdToEyeViewOffset };
+	ovrPosef                  EyeRenderPose[2];
+
+	double           ftiming = ovr_GetPredictedDisplayTime(HMD, 0);
+	// Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
+	double           sensorSampleTime = ovr_GetTimeInSeconds();
+	ovrTrackingState hmdState = ovr_GetTrackingState(HMD, ftiming, ovrTrue);
+	ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
+
+	// eyeRenderTexture. rendering. here's the pinch. line 134
+
+	ovrViewScaleDesc viewScaleDesc;
+	viewScaleDesc.HmdSpaceToWorldScaleInMeters = 1.0f;
+	viewScaleDesc.HmdToEyeViewOffset[0] = ViewOffset[0];
+	viewScaleDesc.HmdToEyeViewOffset[1] = ViewOffset[1];
+
+	ovrLayerEyeFov ld;
+
+	ld.Header.Type = ovrLayerType_EyeFov;
+	ld.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft; // because OpenGl
+
+	OVR::Recti manuelViewport[2] = { OVR::Recti(0,0,960,1080), OVR::Recti(960,0,960,1080) }; // does pos for each texture (?) below
+
+	/////////////////////////////////// BEGIN COLORTEXTURE DEBUG INFO LEARNING
+
+	ovrSwapTextureSet_ swtset[2] = {ovrSwapTextureSet(), ovrSwapTextureSet()}; // someone in c++ school is loling at me rn
+	
+
+
+	for (int eye = 0; eye < 2; ++ eye)
+	{
+		swtset[eye].CurrentIndex = 1;
+		swtset[eye].TextureCount = 2;
+	}
+
+
+	ovrTexture oneOvrTexture = ovrTexture();
+	ovrTexture twoOvrTexture = ovrTexture();
+
+	ovrTextureHeader_ oneHeader = ovrTextureHeader();
+	oneHeader.API = ovrRenderAPI_OpenGL;
+	oneHeader.TextureSize = OVR::Sizei(960, 1080);
+
+
+
+
+	ovrGLTextureData_s oneOvrGLTextureData_s;
+		oneOvrTexture.Header = oneHeader;
+		oneOvrGLTextureData_s.Header = oneHeader;
+
+	
+	oneOvrTexture.PlatformData[0]; 
+
+	// uintptr_t        PlatformData[8];
+
+	//oneOvrTexture.PlatformData = oneOvrGLTextureData_s;
+
+	swtset[0].Textures = &oneOvrTexture;
+	swtset[1].Textures = &twoOvrTexture;
+	
+
+
+//typedef struct ovrGLTextureData_s
+//{
+//    ovrTextureHeader Header;    ///< General device settings.
+//    GLuint           TexId;     ///< The OpenGL name for this texture.
+//} ovrGLTextureData;
+
+	// probably need to init new glTexture & 'blit' or something to it. IDK.
+	// YA I THINK THIS. go forth and prosper with GL. pray. all the best 2 you.
+	// check debug console... can we cast an openGL texture into this strange oculus texture class? whut the deal is?
+	// figure out what an openGL texture structure looks like...
+
+	// now looking for lView, rView, framebuffer glTexture GLuint ##ID
+
+//	CRhinoUiDib lDibAtBitmap = VR().lView->ActiveViewport().DisplayPipeline()->GetFrameBuffer().Bitmap(); 
+//	CRhinoUiDib lDibAtGet = VR().lView->ActiveViewport().DisplayPipeline()->GetFrameBuffer();
+
+	//VR().lView->ActiveViewport().DisplayPipeline()->ShowFrameBuffer(CDC *); // dynamic context class or something.. microsoft...
+	// https://github.com/mcneel/Rhino5Samples_CPP/blob/master/SampleViewportRenderer/SampleDisplayPipeline.cpp
+	
+	// but I believe CRhinoUiDib may be the way RhinoSDK obstructs what is actually in the framebuffer... in terms of ogl ?
+
+//typedef struct ovrGLTextureData_s
+//{
+//    ovrTextureHeader Header;    ///< General device settings.
+//    GLuint           TexId;     ///< The OpenGL name for this texture.
+//} ovrGLTextureData;
+
+	// WHAT IS ovrTexture_ ?
+
+/// Contains platform-specific information about a texture.
+/// Aliases to one of ovrD3D11Texture or ovrGLTexture.
+///
+/// \see ovrD3D11Texture, ovrGLTexture.
+///
+//typedef struct OVR_ALIGNAS(OVR_PTR_SIZE) ovrTexture_
+//{
+//    ovrTextureHeader Header;                    ///< API-independent header.
+//    OVR_ON64(OVR_UNUSED_STRUCT_PAD(pad0, 4))    ///< \internal struct padding
+//    uintptr_t        PlatformData[8];           ///< Specialized in ovrGLTextureData, ovrD3D11TextureData etc. // EIGHT pointers.
+//} ovrTexture;
+
+//typedef struct OVR_ALIGNAS(OVR_PTR_SIZE) ovrSwapTextureSet_ // WHAT IS TEXTURESET
+//{
+//    ovrTexture* Textures;       ///< Points to an array of ovrTextures.
+//    int         TextureCount;   ///< The number of textures referenced by the Textures array.
+
+    /// CurrentIndex specifies which of the Textures will be used by the ovr_SubmitFrame call.
+    /// This is manually incremented by the application, typically in a round-robin manner.
+    ///
+    /// Before selecting a Texture as a rendertarget, the application should increment CurrentIndex by
+    /// 1 and wrap it back to 0 if CurrentIndex == TextureCount, so that it gets a fresh rendertarget,
+    /// one that is not currently being used for display. It can then render to Textures[CurrentIndex].
+    ///
+    /// After rendering, the application calls ovr_SubmitFrame using that same CurrentIndex value
+    /// to display the new rendertarget.
+    ///
+    /// The application can submit multiple frames with the same ovrSwapTextureSet and CurrentIndex
+    /// value if the rendertarget does not need to be updated, for example when displaying an
+    /// information display whose text has not changed since the previous frame.
+    ///
+    /// Multiple layers can use the same ovrSwapTextureSet at the same time - there is no need to
+    /// create a unique ovrSwapTextureSet for each layer. However, all the layers using a particular
+    /// ovrSwapTextureSet will share the same value of CurrentIndex, so they cannot use different
+    /// textures within the ovrSwapTextureSet.
+    ///
+    /// Once a particular Textures[CurrentIndex] has been sent to ovr_SubmitFrame, that texture
+    /// should not be rendered to until a subsequent ovr_SubmitFrame is made (either with a
+    /// different CurrentIndex value, or with a different ovrSwapTextureSet, or disabling the layer).
+//    int         CurrentIndex;
+//} ovrSwapTextureSet;
+
+	/////////////////////////////////// END COLORTEXTURE DEBUG INFO LEARNING
+
+	for (int eye = 0; eye < 2; ++eye)
+	{
+		ld.ColorTexture[eye] = &swtset[eye];	// just need to fill this object with the texture attribute...
+		ld.Viewport[eye] = manuelViewport[eye]; // is OVR::Recti from ovr_math, is x, y, w, h,
+		// // so check out this class (of which eyeRenderTexture[] is instance)
+		ld.Fov[eye] = hmdDesc.DefaultEyeFov[eye];
+		ld.RenderPose[eye] = EyeRenderPose[eye];
+		ld.SensorSampleTime = sensorSampleTime;
+	}
+
+	ovrLayerHeader* layers = &ld.Header;
+
+	ovrResult resultSubmit = ovr_SubmitFrame(HMD, 0, &viewScaleDesc, &layers, 1);
+	if(!OVR_SUCCESS(resultSubmit))
+	{
+		RhinoApp().Print(L"THROWS: Failure at OVR_SubmitFrame\n");
+	}
+
+	ovrResult resultSubmit2 = ovr_SubmitFrame(HMD, 0, &viewScaleDesc, &layers, 1);
+	if(!OVR_SUCCESS(resultSubmit2))
+	{
+		RhinoApp().Print(L"THROWS: Failure at OVR_SubmitFrame 2\n");
+	}
+
 }
 
 

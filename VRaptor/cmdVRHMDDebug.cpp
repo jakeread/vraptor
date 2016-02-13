@@ -35,10 +35,7 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	wStr.Format( L"HMD DEBUG \n");
 	RhinoApp().Print( wStr );
 
-	for(int i=0; i<2000; i++)
-	{
-		VR().HMDViewsUpdate();
-	}
+	VR().HMDFinalThrowsD3D();
 
 	return CRhinoCommand::success;
 }

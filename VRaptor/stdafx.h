@@ -89,6 +89,10 @@
 // is a list of headers for things which SHOULD already exist in Rhino SDK / OpenGL or in OVR_CAPI_GL
 // check out McNeel, OVR tutorials. And finish that table.
 
+// try adding new .h file - 4 u 4 graphics - and add from GlAppUtil.h to extend rhino's opengl 
+// where you cannot find something suitable in the existing implementation
+
+// rhinosdkdisplayengine_ogl.h at 485, 584, 559
 
 //#ifndef __gl_h_
 //#define __gl_h_

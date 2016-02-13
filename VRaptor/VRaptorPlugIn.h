@@ -26,6 +26,9 @@ public:
 	BOOL AddToPlugInHelpMenu() const;
 	BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
+	void HMDFinalThrows();
+	void HMDFinalThrowsD3D();
+
 	bool HMDInit();
 	bool HMDRenderInit();
 	void HMDDestroy();
@@ -33,6 +36,8 @@ public:
 	void HMDViewsUpdate();
 	void HMDRender();
 	void OVRtoRHCams(ovrPosef pose[2]);
+
+	ovrResult resultSubmit;
 
 	ovrSession hmdSession;
 	ovrGraphicsLuid luid;

@@ -142,8 +142,7 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 	vrConduitRight.Bind( *rView);
 
 	///////////////////////////// HMD RENDER INIT
-	VR().HMDRenderInit();
-
+	//VR().HMDRenderInit();
 
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
 	//vrConduitLeft.Enable();
