@@ -82,7 +82,7 @@
 // OVR
 #include <OVR_Math.h>
 //#include <OVR_CAPI.h>
-#include <OVR_CAPI_GL.h>
+#include <OVR_CAPI_D3D.h>
 
 // I think a new approach to setting up the rendering is needed. Check the examples, but this file below
 //#include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common//Win32_GLAppUtil.h"
