@@ -181,22 +181,17 @@ bool CVRaptorPlugIn::HMDRenderInit() // setup for render: making textures, buffe
 	// but it'll get us off the ground. maybe
 	CRhinoUiDib rightBuffer = VR().rView->ActiveViewport().DisplayPipeline()->GetFrameBuffer();
 
-	ovrTexture oneOvrTexture = ovrTexture();
-	ovrTexture twoOvrTexture = ovrTexture();
-
-	ovrGLTextureData_s oneOvrGLTextureData_s;
-
 	ovrSwapTextureSet * pTextureSet = 0;
 
-	// ovr_CreateSwapTextureSetGL(hmdSession, GL_RGBA, bufferSize.w, bufferSize.h, &pTextureSet); // reinterpret_cast<ovrTexture**>(&mirrorTexture)
+	//ovr_CreateSwapTextureSetGL(hmdSession, GL_RGBA, bufferSize.w, bufferSize.h, &pTextureSet); // reinterpret_cast<ovrTexture**>(&mirrorTexture)
 
 	RhinoApp().Print(L"beforeSubmit\n");
 
-	ovrResult resultSubmit = ovr_SubmitFrame(hmdSession, 0, nullptr, 0, 0);
-	if(!OVR_SUCCESS(resultSubmit))
-	{
-		RhinoApp().Print(L"THROWS: Failure at OVR_SubmitFrame\n");
-	}
+	//ovrResult resultSubmit = ovr_SubmitFrame(hmdSession, 0, nullptr, 0, 0);
+	//if(!OVR_SUCCESS(resultSubmit))
+	//{
+	//	RhinoApp().Print(L"THROWS: Failure at OVR_SubmitFrame\n");
+	//}
 
 	// using defined GL_RGBA as in gl.h (rhino include) or use 'magic number' 0x8C43 from OVR Win32GLUtil include.
 	
@@ -300,9 +295,9 @@ void CVRaptorPlugIn::HMDFinalThrows()
 
 
 
-	ovrGLTextureData_s oneOvrGLTextureData_s;
-		oneOvrTexture.Header = oneHeader;
-		oneOvrGLTextureData_s.Header = oneHeader;
+	//vrGLTextureData_s oneOvrGLTextureData_s;
+	//	oneOvrTexture.Header = oneHeader;
+	//	oneOvrGLTextureData_s.Header = oneHeader;
 
 	
 	oneOvrTexture.PlatformData[0]; 

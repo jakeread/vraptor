@@ -62,8 +62,13 @@
 #undef WIN32
 #endif
 
+
+
+
 // Rhino Plug-in
 #include "C:\Program Files (x86)\Rhino 5.0 x64 SDK\Inc\RhinoSdk.h"
+
+#include <Win32_GLAppUtil.h>
 
 // Render Development Kit.
 #include "C:\Program Files (x86)\Rhino 5.0 x64 SDK\Inc\RhRdkHeaders.h"
@@ -76,13 +81,17 @@
 #endif
 
 
+//#include "../../OculusRoomTiny_Advanced/Common/Win32_GLAppUtil.h"
+#include "Kernel/OVR_System.h"
+
 // Rhino Plug-in Linking Pragmas
 #include "C:\Program Files (x86)\Rhino 5.0 x64 SDK\Inc\rhinoSdkPlugInLinkingPragmas.h"
 
 // OVR
-#include <OVR_Math.h>
 //#include <OVR_CAPI.h>
-#include <OVR_CAPI_D3D.h>
+#include <OVR_CAPI_GL.h>
+#include <OVR_Math.h>
+
 
 // I think a new approach to setting up the rendering is needed. Check the examples, but this file below
 //#include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common//Win32_GLAppUtil.h"

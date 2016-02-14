@@ -52,7 +52,7 @@ limitations under the License.
 //     <GL/glcorearb.h>      OpenGL core profile and ARB extension interfaces. Doesn't include interfaces found only in the compatibility profile. Overlaps with gl.h and glext.h.
 
 #if defined(__gl_h_) || defined(__GL_H__) || defined(__X_GL_H)
-    #error gl.h should be included after this, not before.
+    //#error gl.h should be included after this, not before. // THROWS
 #endif
 #if defined(__gl2_h_)
     #error gl2.h should be included after this, not before.
@@ -1765,8 +1765,8 @@ extern "C" {
     typedef void (GLAPIENTRY * PFNGLFOGCOORDDVPROC) (const GLdouble *coord);
     typedef void (GLAPIENTRY * PFNGLFOGCOORDFPROC) (GLfloat coord);
     typedef void (GLAPIENTRY * PFNGLFOGCOORDFVPROC) (const GLfloat *coord);
-    typedef void (GLAPIENTRY * PFNGLMULTIDRAWARRAYSPROC) (GLenum mode, const GLint *first, const GLsizei *count, GLsizei drawcount);
-    typedef void (GLAPIENTRY * PFNGLMULTIDRAWELEMENTSPROC) (GLenum mode, const GLsizei *count, GLenum type, const void *const* indices, GLsizei drawcount);
+    typedef void (APIENTRY *PFNGLMULTIDRAWARRAYSPROC) (GLenum mode,  GLint *first,  GLsizei *count, GLsizei drawcount);									// YEP CHANGED TO MATCH rhinosdkglextensions.h
+    typedef void (APIENTRY *PFNGLMULTIDRAWELEMENTSPROC) (GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei drawcount);	// YEP CHANGED TO MATCH rhinosdkglextensions.h
     typedef void (GLAPIENTRY * PFNGLPOINTPARAMETERFPROC) (GLenum pname, GLfloat param);
     typedef void (GLAPIENTRY * PFNGLPOINTPARAMETERFVPROC) (GLenum pname, const GLfloat *params);
     typedef void (GLAPIENTRY * PFNGLPOINTPARAMETERIPROC) (GLenum pname, GLint param);
@@ -2078,7 +2078,7 @@ extern "C" {
     typedef GLboolean (GLAPIENTRY * PFNGLISPROGRAMPROC) (GLuint program);
     typedef GLboolean (GLAPIENTRY * PFNGLISSHADERPROC) (GLuint shader);
     typedef void      (GLAPIENTRY * PFNGLLINKPROGRAMPROC) (GLuint program);
-	typedef void      (GLAPIENTRY * PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar *const* string, const GLint* length);
+	typedef void      (APIENTRY * PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar ** strings, const GLint* length); // YEP CHANGED TO MATCH rhinosdkglextensions.h
     typedef void      (GLAPIENTRY * PFNGLSTENCILFUNCSEPARATEPROC) (GLenum frontfunc, GLenum backfunc, GLint ref, GLuint mask);
     typedef void      (GLAPIENTRY * PFNGLSTENCILMASKSEPARATEPROC) (GLenum face, GLuint mask);
     typedef void      (GLAPIENTRY * PFNGLSTENCILOPSEPARATEPROC) (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
@@ -2594,8 +2594,8 @@ extern "C" {
     #define GL_CONTEXT_PROFILE_MASK 0x9126
 
     typedef void (GLAPIENTRY * PFNGLFRAMEBUFFERTEXTUREPROC) (GLenum target, GLenum attachment, GLuint texture, GLint level);
-    typedef void (GLAPIENTRY * PFNGLGETBUFFERPARAMETERI64VPROC) (GLenum target, GLenum value, GLint64 * data);
-    typedef void (GLAPIENTRY * PFNGLGETINTEGER64I_VPROC) (GLenum pname, GLuint index, GLint64 * data);
+    typedef void (GLAPIENTRY * PFNGLGETBUFFERPARAMETERI64VPROC) (GLenum target, GLenum value, int64_t * data);
+    typedef void (GLAPIENTRY * PFNGLGETINTEGER64I_VPROC) (GLenum pname, GLuint index, int64_t * data);
 
     #define glFramebufferTexture GLEGetCurrentFunction(glFramebufferTexture)
     #define glGetBufferParameteri64v GLEGetCurrentFunction(glGetBufferParameteri64v)
@@ -3638,8 +3638,8 @@ extern "C" {
     #define GL_TIME_ELAPSED 0x88BF
     #define GL_TIMESTAMP 0x8E28
 
-	typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTI64VPROC) (GLuint id, GLenum pname, GLint64* params);
-	typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTUI64VPROC) (GLuint id, GLenum pname, GLuint64* params);
+	typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTI64VPROC) (GLuint id, GLenum pname, int64_t* params); // int64_t was previously GLint64 -> changed to avoid error... pulled int64_t from defs at CAPI_GLE_GL.h 197
+	typedef void (GLAPIENTRY * PFNGLGETQUERYOBJECTUI64VPROC) (GLuint id, GLenum pname, uint64_t* params); // here as above
     typedef void (GLAPIENTRY * PFNGLQUERYCOUNTERPROC) (GLuint id, GLenum target);
 
     #define glGetQueryObjecti64v  GLEGetCurrentFunction(glGetQueryObjecti64v)
