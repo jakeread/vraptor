@@ -297,7 +297,6 @@
     <ClCompile Include="cmdVRHMDPrintUpdate.cpp" />
     <ClCompile Include="cmdVRHMDViewsUpdate.cpp" />
     <ClCompile Include="CVRConduit.cpp" />
-    <ClCompile Include="HMDFinalThrowsD3D.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -315,7 +314,6 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="VRaptorApp.h" />
     <ClInclude Include="VRaptorPlugIn.h" />
-    <ClInclude Include="vRaptorShared.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />

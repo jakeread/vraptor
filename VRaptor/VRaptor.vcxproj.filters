@@ -48,9 +48,6 @@
     <ClCompile Include="CVRConduit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HMDFinalThrowsD3D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="vRaptorRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,9 +63,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VRaptorPlugIn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vRaptorShared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

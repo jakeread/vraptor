@@ -8,10 +8,9 @@
 #include "VRaptorPlugIn.h"
 
 
-// do HMDInit in it's own class; we want global access to it. include session, tracking session, updates etc...
+// REALLY this is viewport init... on re-structure make that clear.
 
-
-#pragma region VRHmdInit command
+#pragma region VRHmdInit command 
 
 class CCommandVRHMDInit : public CRhinoCommand
 {
@@ -129,8 +128,6 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 
 	//////////// HMD / OVR INIT
 
-	bool hmdSetupSuccess = VR().HMDInit();
-
 	/////////////////////////// PIPELINE INIT
 
 	//lView->Redraw();
@@ -148,25 +145,7 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 	//vrConduitLeft.Enable();
 	vrConduitRight.Enable();
 
-
-
-
-
-
-	if(hmdSetupSuccess)
-	{
-		ON_wString prnt1;
-		prnt1.Format("Successful end VRHMDInit\n");
-		RhinoApp().Print(prnt1);
-		return CRhinoCommand::success;
-	}
-	else
-	{
-		ON_wString prnt1;
-		prnt1.Format("Unsuccessful fin to VRHMDInit\n");
-		RhinoApp().Print(prnt1);
-		return CRhinoCommand::failure;
-	}
+	return CRhinoCommand::success;
 
 
 }

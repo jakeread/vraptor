@@ -26,15 +26,10 @@ public:
 	BOOL AddToPlugInHelpMenu() const;
 	BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
-	void HMDFinalThrows();
-	void HMDFinalThrowsD3D();
-
 	void CallMainLoop();
 
 	void HMDDisplayAnything();
 
-	bool HMDInit();
-	bool HMDRenderInit();
 	void HMDDestroy();
 	void HMDPrintUpdate();
 	void HMDViewsUpdate();
