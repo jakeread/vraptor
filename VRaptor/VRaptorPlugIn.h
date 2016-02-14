@@ -29,6 +29,10 @@ public:
 	void HMDFinalThrows();
 	void HMDFinalThrowsD3D();
 
+	void CallMainLoop();
+
+	void HMDDisplayAnything();
+
 	bool HMDInit();
 	bool HMDRenderInit();
 	void HMDDestroy();

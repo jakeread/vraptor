@@ -24,11 +24,12 @@ limitations under the License.
 /// is not that great!
 
 #include "StdAfx.h"
+#include "VRaptorPlugIn.h"
 
 using namespace OVR;
 
 // return true to retry later (e.g. after display lost)
-static bool MainLoop(bool retryCreate) 
+static bool OcuLoop(bool retryCreate)  // building: now de-construct? re-dux other attempts with newfangled access to bits that didn't work? 
 {
     TextureBuffer * eyeRenderTexture[2] = { nullptr, nullptr };
     DepthBuffer   * eyeDepthBuffer[2] = { nullptr, nullptr };
@@ -211,10 +212,15 @@ Done:
     return retryCreate || OVR_SUCCESS(result) || (result == ovrError_DisplayLost);
 }
 
+void CVRaptorPlugIn::CallMainLoop(){
+	OcuLoop(true);
+}
+
+
 //-------------------------------------------------------------------------------------
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE, LPSTR, int)
 {
-    OVR::System::Init();
+    OVR::System::Init(); // we're probably going to have to de-construct this page & rebuild in the plugin. best of luck.
 
     // Initializes LibOVR, and the Rift
     ovrResult result = ovr_Initialize(nullptr);
@@ -222,7 +228,7 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE, LPSTR, int)
 
     VALIDATE(Platform.InitWindow(hinst, L"Oculus Room Tiny (GL)"), "Failed to open window.");
 
-    Platform.Run(MainLoop);
+    Platform.Run(OcuLoop);
 
     ovr_Shutdown();
 
