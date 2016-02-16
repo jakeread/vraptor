@@ -90,7 +90,7 @@ struct TextureBuffer
             OVR_ASSERT(hmd); // No HMD? A little odd.
             OVR_ASSERT(sampleCount == 1); // ovr_CreateSwapTextureSetD3D11 doesn't support MSAA.
 
-            ovrResult result = ovr_CreateSwapTextureSetGL(hmd, GL_SRGB8_ALPHA8, size.w, size.h, &TextureSet);
+            ovrResult result = ovr_CreateSwapTextureSetGL(hmd, GL_SRGB8_ALPHA8, size.w, size.h, &TextureSet); // why it works here and not otherwise is a mystery
 
             if(OVR_SUCCESS(result))
             {
@@ -642,16 +642,17 @@ struct Model
         }
     }
 
-    void Render(Matrix4f view, Matrix4f proj)
+    void Render(Matrix4f view, Matrix4f proj) // does this PER MODEL must be adding to buffer each time
     {
-        Matrix4f combined = proj * view * GetMatrix();
 
-        glUseProgram(Fill->program);
+        Matrix4f combined = proj * view * GetMatrix(); // going 2 try 2 fio
+
+        glUseProgram(Fill->program); // use this shader program. I am guessing Fill is the shader oculus devs were using to 'fill' the screen before applying distortion etc.
         glUniform1i(glGetUniformLocation(Fill->program, "Texture0"), 0);
         glUniformMatrix4fv(glGetUniformLocation(Fill->program, "matWVP"), 1, GL_TRUE, (FLOAT*)&combined);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, Fill->texture->texId);
+        glBindTexture(GL_TEXTURE_2D, Fill->texture->texId); // this texture is: in ShaderFill as constructed at 757; of no concern...
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer->buffer);

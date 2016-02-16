@@ -37,6 +37,9 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 
 	VR().HMDDisplayAnything();
 
+	//VR().HMDDisplayWithDocCode();
+
+
 	return CRhinoCommand::success;
 }
 

@@ -151,15 +151,15 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN64;_WINDOWS;_DEBUG;_USRDLL;_ITERATOR_DEBUG_LEVEL=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVRKernel\Src;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Include\Extras;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Include;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Src;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\Samples\OculusRoomTiny_Advanced\Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVRKernel\Src;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Include\Extras;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Include;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Src;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\Samples\OculusRoomTiny_Advanced\Common;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\SOIL\Simple OpenGL Image Library\projects\VC9\x64\Debug;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\SOIL\Simple OpenGL Image Library\src</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\VRaptor.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Lib\Windows\x64\Debug\VS2010;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Lib\Windows\x64\Debug\VS2010\LibOVR.lib;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x86\d3dcompiler.lib;$(OVRSDKROOT)LibOVRKernel/Lib/Windows/$(Platform)/$(Configuration)/VS2010/LibOVRKernel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\SOIL\Simple OpenGL Image Library\lib;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Lib\Windows\x64\Debug\VS2010;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\LibOVR\Lib\Windows\x64\Debug\VS2010\LibOVR.lib;C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x86\d3dcompiler.lib;$(OVRSDKROOT)LibOVRKernel/Lib/Windows/$(Platform)/$(Configuration)/VS2010/LibOVRKernel.lib;D:\Drive\velociraptor\velociraptorsrc\VRaptor\VRaptor\SOIL\Simple OpenGL Image Library\projects\VC9\x64\Debug\SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -307,10 +307,10 @@
     </ClCompile>
     <ClCompile Include="VRaptorApp.cpp" />
     <ClCompile Include="VRaptorPlugIn.cpp" />
-    <ClCompile Include="vRaptorRender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SOIL\Simple OpenGL Image Library\src\SOIL.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="VRaptorApp.h" />
     <ClInclude Include="VRaptorPlugIn.h" />

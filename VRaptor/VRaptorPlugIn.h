@@ -29,6 +29,7 @@ public:
 	void CallMainLoop();
 
 	void HMDDisplayAnything();
+	void HMDDisplayWithDocCode();
 
 	void HMDDestroy();
 	void HMDPrintUpdate();

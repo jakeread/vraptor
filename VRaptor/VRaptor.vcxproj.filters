@@ -48,9 +48,6 @@
     <ClCompile Include="CVRConduit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vRaptorRender.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VRaptorApp.h">
@@ -63,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VRaptorPlugIn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SOIL\Simple OpenGL Image Library\src\SOIL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
