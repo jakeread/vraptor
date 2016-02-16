@@ -174,7 +174,7 @@ struct TextureBuffer
     void SetAndClearRenderSurface(DepthBuffer* dbuffer)
     {
         auto tex = reinterpret_cast<ovrGLTexture*>(&TextureSet->Textures[TextureSet->CurrentIndex]);
-
+		// binds the current texture for rendering, so app can render into texture & pass texture to OVR
         glBindFramebuffer(GL_FRAMEBUFFER, fboId);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->OGL.TexId, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dbuffer->texId, 0);
@@ -186,6 +186,7 @@ struct TextureBuffer
 
     void UnsetRenderSurface()
     {
+		// removes bindings from framebuffer. 0s.
         glBindFramebuffer(GL_FRAMEBUFFER, fboId);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
@@ -372,7 +373,7 @@ struct OGL
 
         OVR::GLEContext::SetCurrentContext(&GLEContext);
         GLEContext.Init();
-
+		
         glGenFramebuffers(1, &fboId);
 
         glEnable(GL_DEPTH_TEST);

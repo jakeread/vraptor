@@ -94,8 +94,6 @@ CVRaptorPlugIn& VR()
 	return thePlugIn;
 }
 
-			GLuint texNew;
-
 void ovrWinWomb()
 {
 		// BEGIN what was WINAPI WinMain
@@ -152,40 +150,47 @@ void glErrorReport()
 			}
 }
 
-void CVRaptorPlugIn::HMDDisplayWithDocCode()
+GLuint mortyTex; // is tex 
+GLuint readBufferTexMort;
+GLuint drawBufferTexMort;
+GLsizei num = 1;
+
+void makeMortyTex() // 
 {
-	ovrWinWomb();
-
-	using namespace OVR;
-
-	ovrSession HMD;
-	ovrGraphicsLuid luid;
-    ovrResult result002 = ovr_Create(&HMD, &luid);
-    if (!OVR_SUCCESS(result002))
-		RhinoApp().Print(L"Failed at\t ovr_Create\n");
-
-    ovrHmdDesc hmdDesc = ovr_GetHmdDesc(HMD);
-
-	// Configure Stereo settings.
-	Sizei recommenedTex0Size = ovr_GetFovTextureSize(HMD, ovrEye_Left, hmdDesc.DefaultEyeFov[0], 1.0f);
-	Sizei recommenedTex1Size = ovr_GetFovTextureSize(HMD, ovrEye_Right, hmdDesc.DefaultEyeFov[1], 1.0f);
-	Sizei bufferSize;
-	bufferSize.w  = recommenedTex0Size.w + recommenedTex1Size.w;
-	bufferSize.h = max ( recommenedTex0Size.h, recommenedTex1Size.h );
-
-	ovrSwapTextureSet * pTextureSet;    
-	pTextureSet = nullptr;
-	// ALWAYS CALLS 0 memory somewhere... //&pTextureSet
-	if (ovr_CreateSwapTextureSetGL(HMD, GL_SRGB8_ALPHA8, bufferSize.w, bufferSize.h, &pTextureSet) == ovrSuccess)
+	int soilW, soilH;
+	unsigned char* morty = SOIL_load_image("D:/morty.png", &soilW, &soilH, 0, SOIL_LOAD_RGBA); // loading not werking
+	if (morty == NULL)
 	{
-		// Sample texture access:
-		//	ovrGLTexture* tex = (ovrGLTexture*)&pTextureSet->Textures[0]; // this was i. I suppose normally you composit multiple textures
-		//glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
+		RhinoApp().Print(L"MORTY IS NULL MORTY\n");
 	}
 
+	// make mortyTex & setup to be identical to ovr swapset textures.
 
-	// once more, we init, we debug, we write
-}
+	glGenTextures(1, &mortyTex); 
+	glBindTexture(GL_TEXTURE_2D, mortyTex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, soilW, soilH, 0, GL_RGBA, GL_UNSIGNED_BYTE, morty);  // must be rgba
+
+	if (morty == NULL)
+	{
+		RhinoApp().Print(L"MORTY IS NULL MORTY AT THE SECOND ONE MORTY\n");
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0); // unbinds all tex so our code doesn't fux with anything else
+
+	// also make swap framebuffers
+	glGenFramebuffers(num, &readBufferTexMort);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexMort); // WHAT IS WRONG WITH YOU
+	GLint rbStatus = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
+	glGenFramebuffers(1, &drawBufferTexMort);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexMort);
+
+} // name is mortyTex
 
 void CVRaptorPlugIn::HMDDisplayAnything()
 {
@@ -194,6 +199,8 @@ void CVRaptorPlugIn::HMDDisplayAnything()
 //	CRhinoUiDib lDibAtGet = VR().lView->ActiveViewport().DisplayPipeline()->GetFrameBuffer();
 
 	ovrWinWomb();
+
+	
 
 	using namespace OVR;
 
@@ -218,12 +225,16 @@ void CVRaptorPlugIn::HMDDisplayAnything()
     if (!Platform.InitDevice(windowSize.w, windowSize.h, reinterpret_cast<LUID*>(&luid))) // if it doesn't work: used to goto shutdown
 		RhinoApp().Print(L"Failed at\t Platform.InitDevice\n");
 
+	
+	makeMortyTex();
+
     // Make eye render buffers
     for (int eye = 0; eye < 2; ++eye)
     {
         ovrSizei idealTextureSize = ovr_GetFovTextureSize(HMD, ovrEyeType(eye), hmdDesc.DefaultEyeFov[eye], 1);
         eyeRenderTexture[eye] = new TextureBuffer(HMD, true, true, idealTextureSize, 1, NULL, 1);
         eyeDepthBuffer[eye]   = new DepthBuffer(eyeRenderTexture[eye]->GetSize(), 0);
+		// dunwuntthis
 
         if (!eyeRenderTexture[eye]->TextureSet)
         {
@@ -253,7 +264,7 @@ void CVRaptorPlugIn::HMDDisplayAnything()
     wglSwapIntervalEXT(0);
 
     // SCENE: we won't be needing... ideally ... going to keep building to get any system up.
-    roomScene = new Scene(false);
+    // roomScene = new Scene(false);
 
     bool isVisible = true;
 
@@ -279,7 +290,7 @@ void CVRaptorPlugIn::HMDDisplayAnything()
 
 		// Animate the cube
         static float cubeClock = 0;
-        roomScene->Models[0]->Pos = Vector3f(9 * sin(cubeClock), 3, 9 * cos(cubeClock += 0.015f));
+        // roomScene->Models[0]->Pos = Vector3f(9 * sin(cubeClock), 3, 9 * cos(cubeClock += 0.015f));
 
         // Get eye poses, feeding in correct IPD offset
         ovrVector3f               ViewOffset[2] = { EyeRenderDesc[0].HmdToEyeViewOffset,
@@ -296,11 +307,6 @@ void CVRaptorPlugIn::HMDDisplayAnything()
         {
             for (int eye = 0; eye < 2; ++eye)
             {
-                // Increment to use next texture, just before writing
-                eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
-
-                // Switch to eye render target (but we r not going 2 render 2 it bc we are just passing pixels
-                eyeRenderTexture[eye]->SetAndClearRenderSurface(eyeDepthBuffer[eye]);
 
                 // Get view and projection matrices
                 Matrix4f rollPitchYaw = Matrix4f::RotationY(Yaw);
@@ -312,45 +318,59 @@ void CVRaptorPlugIn::HMDDisplayAnything()
                 Matrix4f view = Matrix4f::LookAtRH(shiftedEyePos, shiftedEyePos + finalForward, finalUp);
                 Matrix4f proj = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[eye], 0.2f, 1000.0f, ovrProjection_RightHanded);
 
+                // Increment to use next texture, just before writing
+                eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
+
+				// Switch to eye render target (but we r not going 2 render 2 it bc we are just passing pixels
+               eyeRenderTexture[eye]->SetAndClearRenderSurface(eyeDepthBuffer[eye]); // binds the current texture for rendering, so app can render into texture & pass texture to OVR
+
+				// MOD
+
+				ovrGLTexture* tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
+
+				// HAVE TO BLIT INTO FRAMEBUFFER. READ THE INTERNET. BUILD THE BUFFERS (they are already there). WRITE TO THE BUFFERS.
+				// submitting via layer DOESN'T WORK OVR Y U GOTTA B SO OPAQUE
+
+				//glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
+				GLboolean isIt = glIsTexture(tex->OGL.TexId); // it is!
+
+				GLint texW, texH, texFormat;
+				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texW);
+				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texH);
+				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &texFormat);
+
+	// fboMan is pointing to the Ogre frame buffer object manager.
+	// Set one fbo as read, the other as write. can these be any framebuffers? 
+	// are not GL_FRAMEBUFFER so different target than in SetAndClearRenderSurface, should be SAFE();
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexMort);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexMort);
+
+	// Left Eye
+	// srcid is the Ogre render target texture.
+	// dstid is the Oculus texture from the texture set.
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mortyTex, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->OGL.TexId, 0); // write to tex
+	// Do the copy.
+	glBlitFramebuffer(0, 0, texW, texH, 0, 0, texW, texH, GL_COLOR_BUFFER_BIT, GL_NEAREST); // BLIT IT HOME MORTY
+
+				// now we are
+
                 // Render world
 				// DO IT NOW MORTY WHAT'S A SCENE MORTY
-				//roomScene->Render(view, proj);
-
-				// TEXTURE IS SET, NOW DO our "RENDER"
-				// next try to set a texture which is proper size.
-
-				 
-
-				/*
-			// get texture from eyeRenderTexture TextureSet
-				for (int n = 0; n < eyeRenderTexture[eye]->TextureSet->TextureCount; n++)
-				{
-					ovrGLTexture* tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
-					glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
-
-					/*
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-					// 
-
-					// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_INT, &pixels4);  // must be rgba
-				}
-			*/
-
-			// the emanuel swap. lol
-			// tex->OGL.TexId = texNew;
-
-                //roomScene->Render(view, proj);
+				// roomScene->Render(view, proj);
 
                 // Avoids an error when calling SetAndClearRenderSurface during next iteration.
                 // Without this, during the next while loop iteration SetAndClearRenderSurface
                 // would bind a framebuffer with an invalid COLOR_ATTACHMENT0 because the texture ID
-                // associated with COLOR_ATTACHMENT0 had been unlocked by calling wglDXUnlockObjectsNV.
-              eyeRenderTexture[eye]->UnsetRenderSurface();
+                // associated with COLOR_ATTACHMENT0 had been unlocked by calling wglDXUnlockObjectsNV
+				
+				eyeRenderTexture[eye]->UnsetRenderSurface(); // removes bindings from framebuffer. 0s.
+
+				//////////////// END OLD RENDER INIT
             }
         }
+
         // Do distortion rendering, Present and flush/sync
 
         // Set up positional data.
@@ -365,69 +385,7 @@ void CVRaptorPlugIn::HMDDisplayAnything()
 
         for (int eye = 0; eye < 2; ++eye)
         {
-			// OR MAYBE DO IT NOW MORTY
-			// Q of the Day: how does program currently put texture in texture set
-			// and how do we interop in that process. it's in the openGL pipeline.
-			// maybe we have to write a gl shader which ships it home. seems... hard.
-			// that means getting per-pixel data from rhino UiDib & firing it through, somehow.
-			// want a BLIT
-			// want to do ANYTHING to texture.
-
-			// GL_READ_BUFFER and glCopyTexImage2D ?
-
-			for (int n = 0; n < eyeRenderTexture[eye]->TextureSet->TextureCount; n++)
-			{
-				ovrGLTexture* tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
-				glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
-				glEnable(GL_TEXTURE_2D);
-				GLboolean isIt = glIsTexture(tex->OGL.TexId); // it is!
-
-				GLint texW, texH, texFormat;
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texW);
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texH);
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &texFormat);
-
-				GLint scopeW = texW;
-				GLint scopeH = texH; // maybe oculus is just rejecting it b/c it doesn't like the small texture?
-				GLint scopeF = texFormat;
-
-				// texFormat
-				// 6408 GL_RGBA
-				// 32904 when no glTexImage2D. So whatever enum oculus uses.
-				// 32907 also shows up now that srgb8_alpha8
-				// GL_TEXTURE_COORD_ARRAY_SIZE_EXT as per http://svn.eu.adacore.com/anonsvn/Dev/trunk/GtkAda/src/opengl/gl_h.ads
-
-				GL_TEXTURE_COORD_ARRAY_SIZE_EXT;
-
-				// K. SOIL.
-				
-				int soilW, soilH;
-				soilW = 1182;
-				soilH = 1464;
-				unsigned char* morty = SOIL_load_image("C:\morty.png", &soilW, &soilH, 0, SOIL_LOAD_RGBA);
-
-				float pixels4[] = {
-				0.0f, 0.0f, 0.0f,0.0f,   1.0f, 1.0f, 1.0f,1.0f,
-				1.0f, 1.0f, 1.0f,1.0f,   0.0f, 0.0f, 0.0f,0.0f
-				};
-
-				float pixels3[] = {
-				0.0f, 0.0f, 0.0f,   1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,   0.0f, 0.0f, 0.0f
-				};
-
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, 1182, 1464, 0, GL_RGBA, GL_UNSIGNED_BYTE, morty);  // must be rgba
-
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texW);
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texH); // TEX SUCCESSFULLY SWAPPED. TRY PROPER SIZE.
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &texFormat);
-
-				scopeW = texW;
-				scopeH = texH; // maybe oculus is just rejecting it b/c it doesn't like the small texture?
-				scopeF = texFormat; // matched; matched; why u render oculus?
-			}
-			
-
+			// do textureSet debug here ?
             ld.ColorTexture[eye] = eyeRenderTexture[eye]->TextureSet; // DO IT LIKE THIS MORTY
             ld.Viewport[eye]     = Recti(eyeRenderTexture[eye]->GetSize());
             ld.Fov[eye]          = hmdDesc.DefaultEyeFov[eye];
