@@ -38,7 +38,8 @@ static class CCommandVRHMDInit theVRHMDInitCommand;
 
 CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext& context )
 {
-	
+	VR().VRLaunchContext = &context;
+
 	////////////////// BEGIN VIEWS INIT
 	
 	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example

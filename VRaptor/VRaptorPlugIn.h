@@ -15,6 +15,10 @@ public:
 	CVRaptorPlugIn();
 	~CVRaptorPlugIn();
 
+	const CRhinoCommandContext *VRLaunchContext; 
+	// don't think this is safe...
+	// probably it changes every time a command is launched...
+
 // Required overrides
 	const wchar_t* PlugInName() const;
 	const wchar_t* PlugInVersion() const;

@@ -96,7 +96,7 @@ struct TextureBuffer
             {
                 for (int i = 0; i < TextureSet->TextureCount; ++i)
                 {
-                    ovrGLTexture* tex = (ovrGLTexture*)&TextureSet->Textures[i];
+                    ovrGLTexture* tex = (ovrGLTexture*)&TextureSet->Textures[i]; // was success
                     glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);
 
                     if (rendertarget)
@@ -115,7 +115,7 @@ struct TextureBuffer
                     }
                 }
             }
-        }
+        } // END if displayableOnHmd
         else
         {
             glGenTextures(1, &texId);
