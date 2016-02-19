@@ -38,11 +38,12 @@ static class CCommandVRHMDInit theVRHMDInitCommand;
 
 CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext& context )
 {
-	VR().VRLaunchContext = &context;
+	VR().VRLaunchContext = &context; // CHEAT. Or take some time to understand
+	// how Rhino contexts work
 
 	////////////////// BEGIN VIEWS INIT
 	
-	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example
+	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example, makes shit work.
 
 	ON_wString wStr;
 	wStr.Format( L"READY SET\n", EnglishCommandName() );
@@ -127,24 +128,26 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 
 	//////////////////////////////// END VIEWS INIT
 
-	//////////// HMD / OVR INIT
-
 	/////////////////////////// PIPELINE INIT
 
-	//lView->Redraw();
+	lView->Redraw();
 	rView->Redraw();
 
-	//rView->RecreateHWND(); check this out when trying to do pixels
-
 	//vrConduitLeft.Bind( *lView);
-	vrConduitRight.Bind( *rView);
-
-	///////////////////////////// HMD RENDER INIT
-	//VR().HMDRenderInit();
+	//vrConduitRight.Bind( *rView);
 
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
 	//vrConduitLeft.Enable();
-	vrConduitRight.Enable();
+	//vrConduitRight.Enable();
+
+	//////////////////////////// TEMP RENDER LOOP
+
+	VR().HMDInit();
+
+	for(int i = 0; i<200; i++)
+	{
+	VR().HMDRender();
+	}
 
 	return CRhinoCommand::success;
 

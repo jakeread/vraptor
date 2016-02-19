@@ -30,9 +30,16 @@ public:
 	BOOL AddToPlugInHelpMenu() const;
 	BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
+// INITS
+	void OvrWinWomb();
+	void HMDInit();
+
+// GL UTIL
+	void glCleanAndBindBuffers();
+
 	void CallMainLoop();
 
-	void HMDDisplayAnything();
+	//void HMDDisplayAnything();
 	void HMDDisplayWithDocCode();
 
 	void HMDDestroy();
@@ -41,24 +48,38 @@ public:
 	void HMDRender();
 	void OVRtoRHCams(ovrPosef pose[2]);
 
+// OVR THINGS
+	ovrSession HMD;
 	ovrResult resultSubmit;
-
-	ovrSession hmdSession;
-	ovrGraphicsLuid luid;
-	ovrHmdDesc desc;
+	ovrHmdDesc hmdDesc;
 	ovrSizei resolution;
 
+// MAGIC: THE VIEWS;
 	CRhinoView* lView;
 	CRhinoView* rView;
 
+// GRAPHICS
+	ovrGLTexture * mirrorTexture;
+
+// TRACKING
+	ovrVector3f ViewOffset[2]; // is - const - in OVR example so don't fuck with
+
 private:
 
+	ovrGraphicsLuid luid;
+
+// Graphics
+	TextureBuffer * eyeRenderTexture[2];
+	DepthBuffer * eyeDepthBuffer[2];
+	GLuint mirrorFBO;
+
 	ovrTrackingState OVRDoTracking();
+	ovrTrackingState ts; 
+	// call these together to update once and have
+	// access to later. so ts = OVRDoTracking(); and then use ts. following
 
-	ovrTrackingState ts;
-
-	ovrVector3f hmdToEyeViewOffsetRaptor[2]; // is - const - in OVR example so don't fuck with
 	ovrPosef tsEyePoses[2]; // left and right.. final
+
 
 // vals req'd for cam resets
 

@@ -35,7 +35,7 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	wStr.Format( L"HMD DEBUG \n");
 	RhinoApp().Print( wStr );
 
-	VR().HMDDisplayAnything();
+	//VR().HMDDisplayAnything();
 
 	//VR().HMDDisplayWithDocCode();
 
