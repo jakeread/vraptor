@@ -35,11 +35,24 @@ public:
 	void HMDInit();
 
 // GL UTIL
+	void makeRhinoTex(CRhinoView* theView);
+
 	void glCleanAndBindBuffers();
 
-	void CallMainLoop();
+	GLuint rhinoTex;
+	GLuint mortyTex;
+	GLuint theTex;
 
-	//void HMDDisplayAnything();
+	GLint theTexW;
+	GLint theTexH;
+
+	int renderTrack;
+
+	GLuint readBufferTexLeft;
+
+	GLuint drawBufferTexLeft;
+
+	void HMDDisplayAnything(); // depreciated
 	void HMDDisplayWithDocCode();
 
 	void HMDDestroy();
@@ -63,6 +76,11 @@ public:
 
 // TRACKING
 	ovrVector3f ViewOffset[2]; // is - const - in OVR example so don't fuck with
+
+// MISC DEBUG SHOULD GO AWAY
+	UINT tick;
+	UINT tickDelta;
+	UINT frameEta;
 
 private:
 

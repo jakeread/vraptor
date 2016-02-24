@@ -101,7 +101,7 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 	}
 
 	lrViews.Append(lView);
-	lrViews.Append(rView);
+	lrViews.Append(rView); // bad management...
 
 	if (lView && rView)
 	{
@@ -133,21 +133,18 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 	lView->Redraw();
 	rView->Redraw();
 
-	//vrConduitLeft.Bind( *lView);
-	//vrConduitRight.Bind( *rView);
+	vrConduitLeft.Bind( *lView);
+	vrConduitRight.Bind( *rView);
 
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
-	//vrConduitLeft.Enable();
-	//vrConduitRight.Enable();
+	vrConduitLeft.Enable();
+	vrConduitRight.Enable();
 
 	//////////////////////////// TEMP RENDER LOOP
 
-	VR().HMDInit();
+	//VR().HMDInit();
 
-	for(int i = 0; i<200; i++)
-	{
-	VR().HMDRender();
-	}
+	RhinoApp().Print(L"all should be init, now call HMDRender via debug\n");
 
 	return CRhinoCommand::success;
 

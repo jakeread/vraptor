@@ -2,7 +2,7 @@
 #include "VRaptorPlugIn.h"
 
 CVRConduit::CVRConduit()
-	: CRhinoDisplayConduit( CSupportChannels::SC_CALCBOUNDINGBOX ) // set notifying channel?
+	: CRhinoDisplayConduit( CSupportChannels::SC_POSTPROCESSFRAMEBUFFER ) // set notifying channel?
 {
 	RhinoApp().Print(L"Conduits: \t CVRConduit Constructor \n");
 	// do init on conduit
@@ -34,41 +34,52 @@ bool CVRConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTe
 {
 	RhinoApp().Print(L"ExecConduit top\n");
 	// do shit when conduit it executed?
+	CRhinoUiDib ppfbDib;
+	CDisplayPipelineAttributes * cdpa = &CDisplayPipelineAttributes();
+	LPCTSTR ppfbDibFile = L"D:/ppfbDib.bmp";
+
   switch( nChannel )
   {
-	  int tick;
-	  int tickDelta;
-	  int frameEta;
 
-		case CSupportChannels::SC_CALCBOUNDINGBOX:
-			RhinoApp().Print(L"execConduit: \tSC_CALCBOUNDINGBOX\n");
+	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER:
+		RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
+		ppfbDib = VR().rView->DisplayPipeline()->GetFrameBuffer();
+		ppfbDib.SaveBmp(ppfbDibFile);
+		
+		// CALL send to HMD
+		// how to make class independent of view?
 
-			// FIGURINZ
+		break;
 
-			// three UINT
-			tick = VR().rView->DisplayPipeline()->GetFrameTick(); // abs clock time -> clock cycles since Rhino Launched.
-			tickDelta = VR().rView->DisplayPipeline()->GetFrameTickDelta(); // clock cycles since current frame drawing began
-			frameEta = VR().rView->DisplayPipeline()->GetFrameETA(); // estimated time of next frame arrival. I think also clock cycles.
+	case CSupportChannels::SC_CALCBOUNDINGBOX:
+		RhinoApp().Print(L"execConduit: \tSC_CALCBOUNDINGBOX\n");
 
-			RhinoApp().Print(L"GetFrameTick() \t \t %i\n", tick);
-			RhinoApp().Print(L"GetFrameTickDelta() \t %i\n", tickDelta); // not behaving as expected
-			RhinoApp().Print(L"GetFrameEta() \t \t %i\n\n", frameEta);
+		// FIGURINZ
 
-			//RhinoApp().Wait(16);
+		// three UINT
+		VR().tick = VR().rView->DisplayPipeline()->GetFrameTick(); // abs clock time -> clock cycles since Rhino Launched.
+		VR().tickDelta = VR().rView->DisplayPipeline()->GetFrameTickDelta(); // clock cycles since current frame drawing began
+		VR().frameEta = VR().rView->DisplayPipeline()->GetFrameETA(); // estimated time of next frame arrival. I think also clock cycles.
 
-			// these two are disabled for now while we init & debug HMD Rendering
-			//VR().HMDViewsUpdate();
-			
-			// how to add wait here ??
+		RhinoApp().Print(L"GetFrameTick() \t \t %i\n", VR().tick);
+		RhinoApp().Print(L"GetFrameTickDelta() \t %i\n", VR().tickDelta); // not behaving as expected
+		RhinoApp().Print(L"GetFrameEta() \t \t %i\n\n", VR().frameEta);
 
-			//VR().HMDViewsRender();
+		//RhinoApp().Wait(16);
 
-			break;
+		// these two are disabled for now while we init & debug HMD Rendering
+		//VR().HMDViewsUpdate();
+		
+		// how to add wait here ??
 
-		case CSupportChannels::SC_INITFRAMEBUFFER: // ah: incoming nChannel is one of these SC_FLAGS and we watch for INITFRAMEBUFFER
-			RhinoApp().Print(L"execConduit: \tSC_INITFRAMEBUFFER\n");
+		//VR().HMDViewsRender();
 
-			break;
+		break;
+
+	case CSupportChannels::SC_INITFRAMEBUFFER: // ah: incoming nChannel is one of these SC_FLAGS and we watch for INITFRAMEBUFFER
+		RhinoApp().Print(L"execConduit: \tSC_INITFRAMEBUFFER\n");
+
+		break;
 
   }
   return true;

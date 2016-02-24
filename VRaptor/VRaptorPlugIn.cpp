@@ -149,22 +149,17 @@ void glErrorReport()
 			}
 }
 
-GLuint rhinoTex; // is tex 
-GLuint mortyTex;
-GLuint readBufferTexMort; // these should all go to VR()
-GLuint drawBufferTexMort;
-GLsizei num = 1;
 
 void CVRaptorPlugIn::glCleanAndBindBuffers()
 {
 	glBindTexture(GL_TEXTURE_2D, 0); // unbinds all tex so our code doesn't fux with anything else
 
 	// also make swap framebuffers
-	glGenFramebuffers(num, &readBufferTexMort);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexMort); 
+	glGenFramebuffers(1, &readBufferTexLeft);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexLeft); 
 	GLint rbStatus = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
-	glGenFramebuffers(1, &drawBufferTexMort);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexMort);
+	glGenFramebuffers(1, &drawBufferTexLeft);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexLeft);
 }
 
 void makeMortyTex() // 
@@ -178,8 +173,8 @@ void makeMortyTex() //
 
 	// make mortyTex & setup to be identical to ovr swapset textures.
 
-	glGenTextures(1, &mortyTex); 
-	glBindTexture(GL_TEXTURE_2D, mortyTex);
+	glGenTextures(1, &VR().mortyTex); 
+	glBindTexture(GL_TEXTURE_2D, VR().mortyTex);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -196,14 +191,14 @@ void makeMortyTex() //
 }  
 // hang on to this for debug as well
 
-void makeRhinoTex() // 
+void CVRaptorPlugIn::makeRhinoTex(CRhinoView* theView) // 
 {
 	/////////////////// BEGIN DIB DRAW
 	// turns out we do this
 
-	CRhinoView* theView = VR().lView; // 
+	CRhinoUiDib onceDib;
 
-	CRhinoDib theDib; // don't want to re-write this everytime either
+	CRhinoUiDib manyDib;
 
 	if(theView) // this does the dib writing / rhino rendering. 
 	{			// I expect it will need much attention. When / how are we pulling out?
@@ -212,34 +207,69 @@ void makeRhinoTex() //
 			CRect rect;
 			theView->GetClientRect(rect); // CWind something
 
-			if (theDib.CreateDib(rect.Width(), rect.Height(), 32, true)) // watch -> 32 is color depth. was 24 in rhino example
+			if(true) // just a debug switch. when this runs, the OTHER dib turns out a texture of 0's w&h ...
 			{
-				// set these flags as you wish
-				BOOL bIgnoreHighlights = FALSE;
-				BOOL bDrawTitle = FALSE;
-				BOOL bDrawConstructionPlane = TRUE;
-				BOOL bDrawWorldAxes = TRUE;
+				
+				CDisplayPipelineAttributes * cdpa = &CDisplayPipelineAttributes();//CDisplayPipelineAttributes( theView->ActiveViewport().DisplayPipeline()->DisplayAttrs() );
 
+				manyDib.CreateDib(rect.Width(), rect.Height(), 32, true);
+
+				manyDib = theView->DisplayPipeline()->GetFrameBuffer(); // does not fux with lower tex
+
+				//theView->ActiveViewport().DisplayPipeline()->DrawToDib(manyDib,rect.Width(), rect.Height(), cdpa); 
+				// this draw (successful to dib)
+				// causes draw below (via launch context) to fail. WTF
+				
+				LPCTSTR manyDibFile = L"D:/manyDib.bmp";  // it's a dib alright
+				manyDib.SaveBmp(manyDibFile);
+
+				// can we just find m_doc somewhere else?
+
+
+				// running this statement causes the OTHER dib (otherDib) to not function...
+
+				//CDisplayPipelineAttributes * cdpa = &CDisplayPipelineAttributes();//CDisplayPipelineAttributes( theView->ActiveViewport().DisplayPipeline()->DisplayAttrs() );
+				// looking to gen a texture with a width which is not 0
+				//theView->DisplayPipeline()->DrawToDC(theDib, theDib.Width(), theDib.Height(), cdpa); // check byte structure?
+				// 
+			}
+
+			if (false) //onceDib.CreateDib(rect.Width(), rect.Height(), 32, true) // watch -> 32 is color depth. was 24 in rhino examplev
+			{
 				// big updates here: set size, make left/right independent,
 				// make view display mode independent
 				// make into function which returns DIB. OR.. then we are not timing independent.
 				// probably take it EZ with the restructure until that timing Q is figured
 
+				
 				CRhinoObjectIterator it(CRhinoObjectIterator::normal_or_locked_objects, 
 										CRhinoObjectIterator::active_and_reference_objects); 
 										// sweet class m8. dunno wutchu doin
 
-				if(theView->ActiveViewport().DisplayMode() == ON::wireframe_display)
+				if(theView->ActiveViewport().DisplayMode() == ON::wireframe_display)  
 				{
-					VR().VRLaunchContext->m_doc.DrawToDC(it, theDib, theDib.Width(), theDib.Height(),
+					VR().VRLaunchContext->m_doc.DrawToDC(it, onceDib, rect.Width(), rect.Height(), 
 						theView->ActiveViewport().View(),
-						bIgnoreHighlights,
-						bDrawTitle,
-						bDrawConstructionPlane,
-						bDrawWorldAxes
+						true,
+						true, // docs say this is really slow
+						true, // rhinoSdkDoc.h line 172, or line 
+						true
 						);
-				}
-				else
+				
+					LPCTSTR onceDibFile = L"D:/onceDib.bmp";  // it's a dib alright
+					onceDib.SaveBmp(onceDibFile);
+
+					//VR().VRLaunchContext->m_doc.DisplayEngineStatus;
+
+					// drawToDC only runs wireframe also. good to know now
+
+					// VR().VRLaunchContext->m_doc.RenderToDC
+
+					// something is causing the above to work, but not below. context sensitive?
+					// even though DIBS load regardless in either case, in 2nd case texture reads 0s in w / h
+
+					} // perhaps bc dib not dc ?
+				else // breaks here
 				{
 					RhinoApp().Print(L"VR ERROR: lView not in wireframe so this outdated code will not run\n");
 				}
@@ -250,13 +280,23 @@ void makeRhinoTex() //
 		RhinoApp().Print(L"VR ERROR: no lView at makeRhinoTex() in Debug, probably HMDInit.\n");
 	}
 
+	CRhinoUiDib theDib; // don't want to re-write this everytime either
+
+	theDib = manyDib; // debug switch
+
+	// OK I THINK now if we get manyDib to be full with a real texture.. like AFTER rendering, we win
+
+	LPBYTE lpByte = theDib.FindDIBBits();
+
 	GLsizei rhDibW = theDib.Width(); // rhfb rhinoframebuffer as in above
 	GLsizei rhDibH = theDib.Height(); // OK just need to get the DIB to actually contain a viewport...
 
-	/* DIB DEBUG
+	// /* DIB DEBUG
 
-	LPCTSTR theDibFile = L"D:/theDib.bmp"; 
+	LPCTSTR theDibFile = L"D:/theDib.bmp";  // it's a dib alright
 	theDib.SaveBmp(theDibFile);
+
+	
 
 	COLORREF theNewColor = 0x00909090;
 	theDib.Clear(theNewColor);
@@ -264,29 +304,9 @@ void makeRhinoTex() //
 	LPCTSTR theNewDib = L"D:/theNewDib.bmp";
 	theDib.SaveBmp(theNewDib);
 
-	*/
+	
 
-	//////////////////////// BEGIN BITMAP UNDERSTANDING
-
-	const BITMAPINFO *bmi = theDib.BitmapInfo(); 
-	const BITMAPINFOHEADER bmih = bmi->bmiHeader; // header; in example this is at BITMAPFILEHEADER ?
-	LPBYTE lpByte = theDib.FindDIBBits(); // literally, 0z and 1z. is probably LPVOID bmBits;
-	WORD bitCount = bmih.biBitCount;
-
-	long bHeight = bmih.biHeight;
-	long bWidth = bmih.biWidth;
-
-	int pointW;
-	int pointH;
-
-	int dataSize = (bWidth*bHeight*(unsigned int)(bmih.biBitCount/8.0));
-
-	// make rhinoTex & setup to be identical to ovr swapset textures.
-
-	glBindTexture(GL_TEXTURE_2D, 0); // safe-t
-
-	glGenTextures(1, &rhinoTex); 
-	glBindTexture(GL_TEXTURE_2D, rhinoTex); // and we'll have two
+	glBindTexture(GL_TEXTURE_2D, VR().rhinoTex); // and we'll have two
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -295,8 +315,13 @@ void makeRhinoTex() //
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); // so that we don't combine with the original.. ?
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, bWidth, bHeight, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, lpByte);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, rhDibW, rhDibH, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, lpByte);//lpByte);
 
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH);
+	bool isTextureVRIs = glIsTexture(VR().rhinoTex);
+	theTexW;
+	theTexH;
 }
 // keep makeRhinoTex(); for debug & build out new solution
 
@@ -326,7 +351,7 @@ void CVRaptorPlugIn::HMDInit()
 		// can we write in a breakpoint?
 	}
 
-	ovrSizei windowSize = { VR().hmdDesc.Resolution.w / 2, VR().hmdDesc.Resolution.h / 2 };
+	ovrSizei windowSize = { VR().hmdDesc.Resolution.w / 2, VR().hmdDesc.Resolution.h / 2 }; // inits for mirror framebuffer
     if (!Platform.InitDevice(windowSize.w, windowSize.h, reinterpret_cast<LUID*>(&luid))) // if it doesn't work: used to goto shutdown
 		RhinoApp().Print(L"Failed at\t Platform.InitDevice\n");
 
@@ -370,197 +395,124 @@ void CVRaptorPlugIn::HMDInit()
     // Turn off vsync to let the compositor do its magic
     wglSwapIntervalEXT(0);
 
-	// this really needs like a full days attention. and it's going to be a great familiarizing
-	// project: so I'm going to bed. TTYL, best of luck, it's going to be great
-	// and see you on the other side.
-	// get to the point where you can measure ms between rhino render finish & oculus display -> how long does the memory blit take ?
-	// and make sure you watch memory leak
-	// it's gonna be great
-	// TTFN: Jake 2 Jake, 2/19/2016/12:25am.
-	// Maybe do in the morning... some... just to make it werking again b4 EVERYTHING ELSE
+	glGenTextures(1, &VR().rhinoTex); // is it bc we are gening text more than once?
 
+	VR().makeRhinoTex(VR().lView); // rhinoTex; 
+
+	//makeMortyTex();
+	VR().glCleanAndBindBuffers(); // unbinds GL_TEXTURE_2D and builds / binds framebuffers
+
+	theTex = VR().rhinoTex; // pick 4 debug
+
+	// make input Texture Width & Height
+	glBindTexture(GL_TEXTURE_2D, theTex);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH);
+
+	renderTrack = 0;
 }
 
 void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
 {
+	using namespace OVR;
+	renderTrack++;
+	RhinoApp().Print(L"renderTrack() %i\n", renderTrack);
 
-	VR().OvrWinWomb(); // CAN'T TAKE IT OUT YET -> This will certainly be an error prone zone (EPZ)
-	using namespace OVR; // this will probably need to be repeated elsewhere...
+	ovrPosef                  EyeRenderPose[2];
 
-	// SETUP WITHOUT TIMING 4 NOW; WILL BREAK UP LATER. WANT TO RUN IN A LOOP
-
-	makeRhinoTex(); // rhinoTex; // SOMETHING HERE 334
-	VR().glCleanAndBindBuffers(); // unbinds GL_TEXTURE_2D and builds / binds framebuffers
-
-	GLuint theTex = rhinoTex; // pick 4 debug
-
-	// make input Texture Width & Height
-
-	glBindTexture(GL_TEXTURE_2D, theTex);
-
-	GLint theTexW, theTexH, theTexFormat;
-
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH);
-	
-	/////////////////////////////////////////////////////////////////////////
-	// I guess OGL calls Platform.HandleMessages() when something happens?
-	// is this how we do our timing? could it b that e-z ?
-
-	while (Platform.HandleMessages()) // need to handle this differently also. how 2 loop; that is the qtion
-    {
-        // Keyboard inputs to adjust player orientation
-        static float Yaw(3.141592f);  
-        if (Platform.Key[VK_LEFT])  Yaw += 0.02f;
-        if (Platform.Key[VK_RIGHT]) Yaw -= 0.02f;
-
-        // Keyboard inputs to adjust player position
-        static Vector3f Pos2(0.0f,1.6f,-5.0f);
-        if (Platform.Key['W']||Platform.Key[VK_UP])     Pos2+=Matrix4f::RotationY(Yaw).Transform(Vector3f(0,0,-0.05f));
-        if (Platform.Key['S']||Platform.Key[VK_DOWN])   Pos2+=Matrix4f::RotationY(Yaw).Transform(Vector3f(0,0,+0.05f));
-        if (Platform.Key['D'])                          Pos2+=Matrix4f::RotationY(Yaw).Transform(Vector3f(+0.05f,0,0));
-        if (Platform.Key['A'])                          Pos2+=Matrix4f::RotationY(Yaw).Transform(Vector3f(-0.05f,0,0));
-        Pos2.y = ovr_GetFloat(HMD, OVR_KEY_EYE_HEIGHT, Pos2.y);
-
-        ovrPosef                  EyeRenderPose[2];
-
-        double           ftiming = ovr_GetPredictedDisplayTime(HMD, 0);
-        // Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
-        double           sensorSampleTime = ovr_GetTimeInSeconds();
-        ovrTrackingState hmdState = ovr_GetTrackingState(HMD, ftiming, ovrTrue);
-        ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
-
-        if (true)
-        {
-            for (int eye = 0; eye < 2; ++eye)
-            {
-
-                // Get view and projection matrices
-                Matrix4f rollPitchYaw = Matrix4f::RotationY(Yaw);
-                Matrix4f finalRollPitchYaw = rollPitchYaw * Matrix4f(EyeRenderPose[eye].Orientation);
-                Vector3f finalUp = finalRollPitchYaw.Transform(Vector3f(0, 1, 0));
-                Vector3f finalForward = finalRollPitchYaw.Transform(Vector3f(0, 0, -1));
-                Vector3f shiftedEyePos = Pos2 + rollPitchYaw.Transform(EyeRenderPose[eye].Position);
-
-                Matrix4f view = Matrix4f::LookAtRH(shiftedEyePos, shiftedEyePos + finalForward, finalUp);
-                Matrix4f proj = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[eye], 0.2f, 1000.0f, ovrProjection_RightHanded);
-
-                // Increment to use next texture, just before writing
-                eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
-
-				// Switch to eye render target (but we r not going 2 render 2 it bc we are just passing pixels
-                eyeRenderTexture[eye]->SetAndClearRenderSurface(eyeDepthBuffer[eye]); // binds the current texture for rendering, so app can render into texture & pass texture to OVR
-				// Let's see if we can get rid of the depth buffer.
-
-				// MOD
-
-				// pull current Texture from OVR set
-				ovrGLTexture* tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
-
-				// HAVE TO BLIT INTO FRAMEBUFFER. READ THE INTERNET. BUILD THE BUFFERS (they are already there). WRITE TO THE BUFFERS.
-				// submitting via layer DOESN'T WORK OVR Y U GOTTA B SO OPAQUE
-
-				GLboolean isIt = glIsTexture(tex->OGL.TexId);	// check OVR tex
-				GLboolean isItReal = glIsTexture(theTex);		// check our tex
-
-				glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);	// bind OVR tex
-
-				// get OVR tex width / height / format
-
-				GLint ovrTexW, ovrTexH, ovrTexFormat;
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &ovrTexW); 
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &ovrTexH);
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &ovrTexFormat);
-				
-
-				// Set one Framebuffer as read, the other as write. can these be any framebuffers? 
-				// are not GL_FRAMEBUFFER so different target than in SetAndClearRenderSurface, should be SAFE();
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexMort);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexMort);
-
-				// theTex is our input
-				// tex->OGL.TexID is the Oculus texture from the texture set.
-				glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, theTex, 0);
-				glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->OGL.TexId, 0);
-				// Do the copy.
-				glBlitFramebuffer(0, 0, theTexW, theTexH, 0, 0, ovrTexW, ovrTexH, GL_COLOR_BUFFER_BIT, GL_NEAREST); // BLIT IT HOME MORTY
-
-                // Avoids an error when calling SetAndClearRenderSurface during next iteration.
-                // Without this, during the next while loop iteration SetAndClearRenderSurface
-                // would bind a framebuffer with an invalid COLOR_ATTACHMENT0 because the texture ID
-                // associated with COLOR_ATTACHMENT0 had been unlocked by calling wglDXUnlockObjectsNV
-				
-				eyeRenderTexture[eye]->UnsetRenderSurface(); // removes bindings from framebuffer. 0s.
-            }
-        }
-
-        // Do distortion rendering, Present and flush/sync
-
-        // Set up positional data.
-        ovrViewScaleDesc viewScaleDesc;
-        viewScaleDesc.HmdSpaceToWorldScaleInMeters = 1.0f;
-        viewScaleDesc.HmdToEyeViewOffset[0] = ViewOffset[0];
-        viewScaleDesc.HmdToEyeViewOffset[1] = ViewOffset[1];
-
-        ovrLayerEyeFov ld;
-        ld.Header.Type  = ovrLayerType_EyeFov;
-        ld.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;   // Because OpenGL.
-
-        for (int eye = 0; eye < 2; ++eye)
-        {
-			// do textureSet debug here ?
-            ld.ColorTexture[eye] = eyeRenderTexture[eye]->TextureSet; // DO IT LIKE THIS MORTY
-            ld.Viewport[eye]     = Recti(eyeRenderTexture[eye]->GetSize());
-            ld.Fov[eye]          = hmdDesc.DefaultEyeFov[eye];
-            ld.RenderPose[eye]   = EyeRenderPose[eye];
-            ld.SensorSampleTime  = sensorSampleTime;
-        }
-
-        ovrLayerHeader* layers = &ld.Header;
-        ovrResult resultSubmit = ovr_SubmitFrame(HMD, 0, &viewScaleDesc, &layers, 1);
-        // exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
-        if (!OVR_SUCCESS(resultSubmit))
-            goto Done;
-
-		// glErrorReport();
-
-        // Blit mirror texture to back buffer
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, mirrorFBO);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        GLint w = mirrorTexture->OGL.Header.TextureSize.w;
-        GLint h = mirrorTexture->OGL.Header.TextureSize.h;
-        glBlitFramebuffer(0, h, w, 0,
-                          0, 0, w, h,
-                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-        SwapBuffers(Platform.hDC);
-    }
-
-	/////////////// END MAINLOOP
-
-Done:
-    if (mirrorFBO) glDeleteFramebuffers(1, &mirrorFBO);
-    if (mirrorTexture) ovr_DestroyMirrorTexture(HMD, reinterpret_cast<ovrTexture*>(mirrorTexture));
-    for (int eye = 0; eye < 2; ++eye)
-    {
-        delete eyeRenderTexture[eye];
-        delete eyeDepthBuffer[eye];
-    }
-    Platform.ReleaseDevice();
-    ovr_Destroy(HMD);
-
-	RhinoApp().Print(L"\n //////////////////////////////////////// FIN DRAWANYTHING\n");
-
-    // Retry on ovrError_DisplayLost
-    //return retryCreate || OVR_SUCCESS(result) || (result == ovrError_DisplayLost);
+	double           ftiming = ovr_GetPredictedDisplayTime(HMD, 0);
+	// Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
+	double           sensorSampleTime = ovr_GetTimeInSeconds();
+	ovrTrackingState hmdState = ovr_GetTrackingState(HMD, ftiming, ovrTrue);
+	ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
 
 
+	for (int eye = 0; eye < 2; ++eye)
+	{
+		eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
+		// Switch to eye render target (but we r not going 2 render 2 it bc we are just passing pixels
+		eyeRenderTexture[eye]->SetAndClearRenderSurface(eyeDepthBuffer[eye]); // binds the current texture for rendering, so app can render into texture & pass texture to OVR
+		// Let's see if we can get rid of the depth buffer.
+
+		// MOD
+
+		// pull current Texture from OVR set
+		ovrGLTexture* tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
+		glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);	// bind OVR tex
+
+		// get OVR tex width / height / format
+
+		GLint ovrTexW, ovrTexH, ovrTexFormat;
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &ovrTexW); 
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &ovrTexH);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &ovrTexFormat);
+
+		// Set one Framebuffer as read, the other as write. can these be any framebuffers? 
+		// are not GL_FRAMEBUFFER so different target than in SetAndClearRenderSurface, should be SAFE();
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexLeft);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexLeft);
+
+		// theTex is our input
+		// tex->OGL.TexID is the Oculus texture from the texture set.
+		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, theTex, 0);
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->OGL.TexId, 0);
+		// Do the copy.
+		glBlitFramebuffer(0, 0, theTexW, theTexH, 0, 0, ovrTexW, ovrTexH, GL_COLOR_BUFFER_BIT, GL_NEAREST); // BLIT IT HOME MORTY
+
+		// Avoids an error when calling SetAndClearRenderSurface during next iteration.
+		// Without this, during the next while loop iteration SetAndClearRenderSurface
+		// would bind a framebuffer with an invalid COLOR_ATTACHMENT0 because the texture ID
+		// associated with COLOR_ATTACHMENT0 had been unlocked by calling wglDXUnlockObjectsNV
+
+		eyeRenderTexture[eye]->UnsetRenderSurface(); // removes bindings from framebuffer. 0s.
+	}
+
+	// Do distortion rendering, Present and flush/sync
+
+	// Set up positional data.
+	ovrViewScaleDesc viewScaleDesc;
+	viewScaleDesc.HmdSpaceToWorldScaleInMeters = 1.0f;
+	viewScaleDesc.HmdToEyeViewOffset[0] = ViewOffset[0];
+	viewScaleDesc.HmdToEyeViewOffset[1] = ViewOffset[1];
+
+	ovrLayerEyeFov ld;
+	ld.Header.Type  = ovrLayerType_EyeFov;
+	ld.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;   // Because OpenGL.
+
+	for (int eye = 0; eye < 2; ++eye)
+	{
+		// do textureSet debug here ?
+		ld.ColorTexture[eye] = eyeRenderTexture[eye]->TextureSet; // DO IT LIKE THIS MORTY
+		ld.Viewport[eye]     = Recti(eyeRenderTexture[eye]->GetSize());
+		ld.Fov[eye]          = hmdDesc.DefaultEyeFov[eye];
+		ld.RenderPose[eye]   = EyeRenderPose[eye];
+		ld.SensorSampleTime  = sensorSampleTime;
+	}
+
+	ovrLayerHeader* layers = &ld.Header;
+	ovrResult resultSubmit = ovr_SubmitFrame(HMD, 0, &viewScaleDesc, &layers, 1);
+	Platform.Running;
+	// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
+	if (!OVR_SUCCESS(resultSubmit))
+		RhinoApp().Print(L"Failure on ovr_SubmitFrame at 484");
+
+	// glErrorReport();
+
+	// Blit mirror texture to back buffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, mirrorFBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	GLint w = mirrorTexture->OGL.Header.TextureSize.w;
+	GLint h = mirrorTexture->OGL.Header.TextureSize.h;
+	glBlitFramebuffer(0, h, w, 0,
+		0, 0, w, h,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	SwapBuffers(Platform.hDC);
 }
 
-/////// DISPLAYANYTHING -> Here for Debugging, Testing... Memory
-/*
+// herein lies DisplayAnything
 
+/*
 void CVRaptorPlugIn::HMDDisplayAnything()
 {
 	// Setup 4 OVR happiness
@@ -647,7 +599,7 @@ void CVRaptorPlugIn::HMDDisplayAnything()
 	/////////////////////////////////////////////////////////////////////////
 	// I guess OGL calls Platform.HandleMessages() when something happens?
 	// is this how we do our timing? could it b that e-z ?
-	while (Platform.HandleMessages()) // Platform.HandleMessages()
+	while (true) // Platform.HandleMessages()
     {
         // Keyboard inputs to adjust player orientation
         static float Yaw(3.141592f);  
@@ -717,8 +669,8 @@ void CVRaptorPlugIn::HMDDisplayAnything()
 
 				// Set one Framebuffer as read, the other as write. can these be any framebuffers? 
 				// are not GL_FRAMEBUFFER so different target than in SetAndClearRenderSurface, should be SAFE();
-				glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexMort);
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexMort);
+				glBindFramebuffer(GL_READ_FRAMEBUFFER, readBufferTexLeft);
+				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawBufferTexLeft);
 
 				// theTex is our input
 				// tex->OGL.TexID is the Oculus texture from the texture set.
@@ -804,6 +756,7 @@ Done:
 */
 
 
+
 void CVRaptorPlugIn::HMDPrintUpdate()
 {
 	// code here to print all relevant data from class, for debugging
@@ -819,6 +772,19 @@ void CVRaptorPlugIn::HMDDestroy()
 	ON_wString wStr;
 	wStr.Format( L"HMDDestroy.\n" );
 	RhinoApp().Print( wStr );
+
+    if (mirrorFBO) glDeleteFramebuffers(1, &mirrorFBO);
+    if (mirrorTexture) ovr_DestroyMirrorTexture(HMD, reinterpret_cast<ovrTexture*>(mirrorTexture));
+    for (int eye = 0; eye < 2; ++eye)
+    {
+        delete eyeRenderTexture[eye];
+        delete eyeDepthBuffer[eye];
+    }
+    Platform.ReleaseDevice();
+    ovr_Destroy(HMD);
+
+	RhinoApp().Print(L"\n //////////////////////////////////////// FIN DRAWANYTHING\n");
+
 }
 
 ///////////
