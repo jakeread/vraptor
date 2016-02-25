@@ -36,10 +36,13 @@
     <ClCompile Include="cmdVRHMDViewsUpdate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CVRConduit.cpp">
+    <ClCompile Include="cmdInitVR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cmdInitVR.cpp">
+    <ClCompile Include="CVRConduitUpdate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CVRConduitRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

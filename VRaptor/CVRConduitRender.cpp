@@ -1,14 +1,14 @@
 #include "stdafx.h"
 #include "VRaptorPlugIn.h"
 
-CVRConduit::CVRConduit()
+CVRConduitRender::CVRConduitRender()
 	: CRhinoDisplayConduit( CSupportChannels::SC_POSTPROCESSFRAMEBUFFER ) // set notifying channel?
 {
-	RhinoApp().Print(L"Conduits: \t CVRConduit Constructor \n");
+	RhinoApp().Print(L"Conduits: \t CVRConduitRender Constructor \n");
 	// do init on conduit
 }
 
-void CVRConduit::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& dp) // called more often than exec... so probably more than once a frame.
+void CVRConduitRender::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& dp) // called more often than exec... so probably more than once a frame.
 {
 	// do shit when conduit is notified: with incoming Notify Tag
 	//RhinoApp().Print(L"NotifyConduit\n");
@@ -30,32 +30,28 @@ void CVRConduit::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& 
 
 }
 
-bool CVRConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTerminate)
+bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTerminate)
 {
-	RhinoApp().Print(L"ExecConduit top\n");
+	//RhinoApp().Print(L"ExecConduit top\n");
 	// do shit when conduit it executed?
 
-	int texInspectW;
-	int texInspectH;
-
-	
+	/*
 	HWND rhinoHWND = VR().rView->GetSafeHwnd();
 	HDC rhinoHDC = GetDC(rhinoHWND);
-
+	*/
 
   switch( nChannel )
   {
 	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER:
-		RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
-		VR().rView->GetClientRect(VR().vrRect);
-		VR().currentDib.CreateDib(VR().vrRect.Width(), VR().vrRect.Height(), 32, true); // setup with proper color depth
-		
+		//RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
+
 		VR().currentDib = VR().rView->DisplayPipeline()->GetFrameBuffer();
-		VR().currentDib.SaveBmp(VR().currentDibFile); // WRITE IT. LEAVE IT.
-		
+		//VR().currentDib.SaveBmp(VR().currentDibFile); // WRITE IT. LEAVE IT.
 		VR().HMDRender(); // will flip to it's OGL context
 
-		// amaze. congrats.
+		// just after render, do tracking
+		
+		VR().OVRDoTracking();
 
 		// maybe we just hit a 'render switch' here... like 'New frame is Ready!'. 
 		// ovr OGL is always looking. sets flag back to 0 once it has pushed frame thru.

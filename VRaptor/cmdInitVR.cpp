@@ -29,8 +29,11 @@ public:
 	CRhinoCommand::result RunCommand( const CRhinoCommandContext& );
 
 public:
-	CVRConduit vrConduitLeft;
-	CVRConduit vrConduitRight;
+	CVRConduitRender vrConduitLeft;
+	CVRConduitRender vrConduitRight;
+
+	CVRConduitUpdate vrConduitUpdateLeft;
+	CVRConduitUpdate vrConduitUpdateRight;
 };
 
 // The one and only CCommandInitVR object
@@ -144,9 +147,15 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	vrConduitLeft.Bind( *lView);
 	vrConduitRight.Bind( *rView);
 
+	vrConduitUpdateLeft.Bind( *lView);
+	vrConduitUpdateRight.Bind( *rView);
+
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
 	vrConduitLeft.Enable();
 	vrConduitRight.Enable();
+
+	vrConduitUpdateLeft.Enable();
+	vrConduitUpdateRight.Enable();
 
 	//////////////////////////// TEMP RENDER LOOP
 

@@ -60,8 +60,11 @@ public:
 	void HMDViewsUpdate();
 	void HMDRender();
 
+	void OVRDoTracking();
+	ovrTrackingState ts;
+	ovrPosef tsEyePoses[2]; // left and right.. final
 
-	void OVRtoRHCams(ovrPosef pose[2]);
+	void RHCamsUpdate();
 
 // OVR THINGS
 	ovrSession HMD;
@@ -99,15 +102,8 @@ private:
 	DepthBuffer * eyeDepthBuffer[2];
 	GLuint mirrorFBO;
 
-
-
-	ovrTrackingState OVRDoTracking();
-	ovrTrackingState ts; 
 	// call these together to update once and have
 	// access to later. so ts = OVRDoTracking(); and then use ts. following
-
-	ovrPosef tsEyePoses[2]; // left and right.. final
-
 
 // vals req'd for cam resets
 
@@ -131,10 +127,10 @@ private:
   // TODO: Add additional class information here
 };
 
-class CVRConduit: public CRhinoDisplayConduit // really this one should be in the header
+class CVRConduitRender: public CRhinoDisplayConduit // calls HMDRender currently
 {
 public:
-	CVRConduit();
+	CVRConduitRender();
 
 	bool ExecConduit(
 		CRhinoDisplayPipeline&,	// pipeline executing this conduit
@@ -145,6 +141,26 @@ public:
 	void NotifyConduit(
 		EConduitNotifiers,		// event reported by display pipeline
 		CRhinoDisplayPipeline&	// pipeline calling this conduit
+		);
+
+public:
+
+};
+
+class CVRConduitUpdate: public CRhinoDisplayConduit // does updating 2 views
+{
+public:
+	CVRConduitUpdate();
+
+	bool ExecConduit(
+		CRhinoDisplayPipeline&,
+		UINT,
+		bool&
+		);
+
+	void NotifyConduit(
+		EConduitNotifiers,
+		CRhinoDisplayPipeline&
 		);
 
 public:

@@ -201,6 +201,12 @@ void CVRaptorPlugIn::InitHMD()
 
 	renderTrack = 0;
 
+	// RHINO DIB INIT
+
+	VR().rView->GetClientRect(VR().vrRect);
+	VR().currentDib.CreateDib(VR().vrRect.Width(), VR().vrRect.Height(), 32, true); // setup with proper color depth
+		
+
 	makeMortyTex();
 }
 
@@ -250,15 +256,12 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 {
 	
 	// gotta do this wglMakeCurrent(hDC, hGLRC);
-
+	// IMPROVE: this can probably call / update without constructing...
 	HGLRC theHGLRC = Platform.WglContext; // now how do we get these really?
-
 	HWND theHWND = Platform.Window;
-
 	HDC theHDC = GetDC(theHWND);
 
 	bool currentSuccess = wglMakeCurrent(theHDC, theHGLRC);
-
 	if(!currentSuccess)
 	{
 		RhinoApp().Print(L"failed to make OVR Window Current");
@@ -269,10 +272,6 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 	using namespace OVR;
 
-	// wglSwapIntervalEXT(0); // make sure vsync is off to 'let compositor do it's magic' (this from OVR)
-
-	//////// MAKE RHINO TEX
-
 	// OK I THINK now if we get manyDib to be full with a real texture.. like AFTER rendering, we win
 
 	VR().rhDibW = VR().currentDib.Width(); // rhfb rhinoframebuffer as in above
@@ -280,62 +279,33 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 	LPBYTE theBytes = VR().currentDib.FindDIBBits(); // y'all is constant. DIB maybe isn't writing into 32 bit dib.
 
-	CRhinoUiDib tempDib = VR().currentDib.CopyDib();
-
-	LPBYTE newBytes = tempDib.FindDIBBits(); // and destroy. going to keep this for now, 
-	// but delete and just use 'theBytes' when we can confirm that swapping a textureset works best.
-
-	// destroy the dib
-
-	// /* DIB DEBUG
+	/* DIB DEBUG
 
 	LPCTSTR theDibFile = L"D:/currentDibAtHMDRender.bmp";  // it's a dib alright
 	VR().currentDib.SaveBmp(theDibFile);
-
-	/*
-
-	COLORREF theNewColor = 0x00909090;
-	theDib.Clear(theNewColor);
-
-	LPCTSTR theNewDib = L"D:/theNewDib.bmp";
-	theDib.SaveBmp(theNewDib);
 
 	*/
 
 	wglSwapIntervalEXT(0);
 		
 	glBindTexture(GL_TEXTURE_2D, VR().rhinoTex); // 
-
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); // so that we don't combine with the original.. ?
-
-	/*
-	// this openGL command draws str8 to 'the' framebuffer.
-	glDrawPixels(rhDibW, rhDibH, GL_BGRA, GL_UNSIGNED_BYTE, lpByte);
-	// should draw pixels to the current target framebuffer, so read framebuffer, and then we will blit from read to draw...
-	*/
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, VR().rhDibW, VR().rhDibH, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, newBytes);
-
-	// now we are re-writing this texture every time we call this function in CVRConduit
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, VR().rhDibW, VR().rhDibH, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, theBytes);
 
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH);
-	theTexW;
-	theTexH;
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 
-	/////////// OVR
-
-
+	/////////// OVR TRACKING
 	ovrPosef                  EyeRenderPose[2];
-
 	// Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
 	double           sensorSampleTime = ovr_GetTimeInSeconds();
 	ovrTrackingState hmdState = ovr_GetTrackingState(HMD, 0, ovrTrue);
 	ovr_CalcEyePoses(hmdState.HeadPose.ThePose, ViewOffset, EyeRenderPose);
 
+	///////// OVR RENDERING
 	for (int eye = 0; eye < 2; ++eye)
 	{
 		VR().eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
@@ -417,7 +387,9 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 	SwapBuffers(Platform.hDC);
 
-	tempDib.DestroyDib();
+	//HMDViewsUpdate();
+
+	// Call OVR Track here?
 }
 
 void CVRaptorPlugIn::HMDDestroy()
@@ -448,11 +420,11 @@ void CVRaptorPlugIn::HMDDestroy()
 ///////////
 // Runtime
 
-ovrTrackingState CVRaptorPlugIn::OVRDoTracking()	// in the future we should set this up to take an absTime function for 
+void CVRaptorPlugIn::OVRDoTracking()	// also this should take & hit a pointer, not a var...
 										// ovr_GetTrackingState to pull
 {
-		// Query HMD for current tracking state
-	ts = ovr_GetTrackingState(HMD, 0.0, false); 
+	// Query HMD for current tracking state
+	ts = ovr_GetTrackingState(VR().HMD, 0.0, false); 
 			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
 			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
@@ -462,50 +434,53 @@ ovrTrackingState CVRaptorPlugIn::OVRDoTracking()	// in the future we should set 
 
 		// setup all relevant values to do next moves
 		// already have all things in ts and tsEyePoses
-		eyePoseQuats[0] = tsEyePoses[0].Orientation; // quaternion class for rotation angle, used later
-		eyePoseQuats[1] = tsEyePoses[1].Orientation;
-
+		eyePoseQuats[0] = VR().tsEyePoses[0].Orientation; // quaternion class for rotation angle, used later
+		eyePoseQuats[1] = VR().tsEyePoses[1].Orientation;
 	}
 	else
 	{
 		RhinoApp().Print(L"Unable to poll Oculus Tracking: Please open Oculus Configuration Utility and try again\n");
 	}
 
-	return ts;
-}
-
-void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePoses 
-{
+	////// & convert to Rhino Cam Data, for reset later...
 	for (int i = 0; i< 2; i++)
 	{
-		// ok, take pose and decomp into location
-		// camLocation[]
-		camLoc[i] = scaleMult * ON_3dPoint(pose[i].Position.x, pose[i].Position.y, pose[i].Position.z);
-
+		// make the rotation vector & rotate some base vectors (we are operating absolute, not relative to last move)
 		rotationVector = eyePoseQuats[i].ToRotationVector();
 
-		//RhinoApp().Print( L"OVRtoRHCams rotationVector = \t %f \t %f \t %f \n", rotationVector.x, rotationVector.y, rotationVector.x);
-
 		dirBase = ON_3dVector(0.0, 1.0, 0.0);
-		upBase = ON_3dVector(0.0, 0.0, 1.0);
+		upBase = ON_3dVector(0.0, 0.0, 1.0); // these can be local, are not
 
 		dirBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, rotationVector.y, rotationVector.z) );
 		upBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, rotationVector.y, rotationVector.z) );
 
+		// set 'em all
 		camDir[i] = dirBase;
 		camUp[i] = upBase; // there's a chance dir and up can be called only once; given parallel eyes
+		// set location
+		camLoc[i] = scaleMult * ON_3dPoint(tsEyePoses[i].Position.x, tsEyePoses[i].Position.y, tsEyePoses[i].Position.z);
 
-		//RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
-		//RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
+		// ship it 2 console 4 debug
+		RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
+		RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
 
 		// then setcams (2nd for, so simulteneous)
 		// then redraw
 	}
 
+}
+
+void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[] to update lView & rView
+{
+	// need to set new locations, probably BEFORE start of next render. so makes sense to run it in a conduit
+	// & call in framebuffer end. or same as other conduit? where are we going to let up?
+
+	// in endless loop w/ no escape. finally we are at the timing & updates problem.
+	
 	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
 	lView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[0]);
 	lView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[0]);
-
+	
 	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
@@ -517,8 +492,6 @@ void CVRaptorPlugIn::OVRtoRHCams(ovrPosef pose[2]) // there pose[2] is tsEyePose
 void CVRaptorPlugIn::HMDViewsUpdate()
 {
 	OVRDoTracking(); // to update all vals
-	OVRtoRHCams(tsEyePoses);
-	//RhinoApp().Wait(16); // so approximately 60fps; that's not a lot of milliseconds! 
 }
 
 /////////////////////////////////////////////////////////////////////////////
