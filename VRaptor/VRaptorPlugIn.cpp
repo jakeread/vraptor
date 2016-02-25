@@ -181,14 +181,17 @@ void CVRaptorPlugIn::InitHMD()
 	// do 1st init on rhinoTex
 
 
-	glGenTextures(1, &VR().rhinoTex); 
+	for (int rl = 0; rl < 2; rl++)
+	{
+		glGenTextures(1, &VR().rhinoTexSet[rl]); 
 
-	glBindTexture(GL_TEXTURE_2D, VR().rhinoTex); // 
+		glBindTexture(GL_TEXTURE_2D, VR().rhinoTexSet[rl]); // 
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	}
 	
 
 	// VR().makeMortyTex();
@@ -202,14 +205,23 @@ void CVRaptorPlugIn::InitHMD()
 	renderTrack = 0;
 
 	// RHINO DIB INIT
+	
+	VR().lView->GetClientRect(VR().vrLeftRect);
+	VR().currentDib[0].CreateDib(VR().vrLeftRect.Width(), VR().vrLeftRect.Height(), 32, true);
 
-	VR().rView->GetClientRect(VR().vrRect);
-	VR().currentDib.CreateDib(VR().vrRect.Width(), VR().vrRect.Height(), 32, true); // setup with proper color depth
-		
+	VR().rView->GetClientRect(VR().vrRightRect);
+	VR().currentDib[1].CreateDib(VR().vrRightRect.Width(), VR().vrRightRect.Height(), 32, true); // setup with proper color depth
 
 	makeMortyTex();
 }
 
+void CVRaptorPlugIn::rhinoPrintGuid(GUID guid) {
+    RhinoApp().Print(L"{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX} \n", 
+      guid.Data1, guid.Data2, guid.Data3, 
+      guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+      guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+}
+	
 
 void CVRaptorPlugIn::makeMortyTex() // 
 {
@@ -237,8 +249,8 @@ void CVRaptorPlugIn::makeMortyTex() //
 		RhinoApp().Print(L"MORTY IS NULL MORTY AT THE SECOND ONE MORTY\n");
 	}
 
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &mortyTexW);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &mortyTexH);
 	GLboolean isTextureVRIs = glIsTexture(VR().mortyTex);
 
 }  
@@ -272,12 +284,14 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 	using namespace OVR;
 
-	// OK I THINK now if we get manyDib to be full with a real texture.. like AFTER rendering, we win
+	////// SET DIB SETTINGS, BYTES
+	for (int rl = 0; rl<2; rl++)
+	{
+		VR().rhDibW[rl] = VR().currentDib[rl].Width(); // rhfb rhinoframebuffer as in above
+		VR().rhDibH[rl] = VR().currentDib[rl].Height(); // OK just need to get the DIB to actually contain a viewport...
+	}
 
-	VR().rhDibW = VR().currentDib.Width(); // rhfb rhinoframebuffer as in above
-	VR().rhDibH = VR().currentDib.Height(); // OK just need to get the DIB to actually contain a viewport...
-
-	LPBYTE theBytes = VR().currentDib.FindDIBBits(); // y'all is constant. DIB maybe isn't writing into 32 bit dib.
+	LPBYTE theBytes[2] = { VR().currentDib[0].FindDIBBits(), VR().currentDib[1].FindDIBBits() }; // y'all is constant. DIB maybe isn't writing into 32 bit dib.
 
 	/* DIB DEBUG
 
@@ -287,19 +301,24 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 	*/
 
 	wglSwapIntervalEXT(0);
-		
-	glBindTexture(GL_TEXTURE_2D, VR().rhinoTex); // 
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); // so that we don't combine with the original.. ?
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, VR().rhDibW, VR().rhDibH, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, theBytes);
 
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH);
+	//////// SET TEXTURES UP
+	for(int rl = 0; rl<2; rl++)
+	{
+		glBindTexture(GL_TEXTURE_2D, VR().rhinoTexSet[rl]); // 
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); // so that we don't combine with the original.. ?
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, VR().rhDibW[rl], VR().rhDibH[rl], 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, theBytes[rl]);
+		// breaks here
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW[rl]);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH[rl]);
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 
 
 	/////////// OVR TRACKING
-	ovrPosef                  EyeRenderPose[2];
+	// this should come from our earlier tracking session!!!!!!!!!!!!!
+	ovrPosef                  EyeRenderPose[2]; 
 	// Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
 	double           sensorSampleTime = ovr_GetTimeInSeconds();
 	ovrTrackingState hmdState = ovr_GetTrackingState(HMD, 0, ovrTrue);
@@ -312,7 +331,6 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		// Switch to eye render target (but we r not going 2 render 2 it bc we are just passing pixels
 		// eyeRenderTexture[eye]->SetAndClearRenderSurface(eyeDepthBuffer[eye]); // binds the current texture for rendering, so app can render into texture & pass texture to OVR
 		// Let's see if we can get rid of the depth buffer.
-
 		// MOD
 
 		// pull current Texture from OVR set
@@ -333,10 +351,10 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 		// theTex is our input
 		// tex->OGL.TexID is the Oculus texture from the texture set.
-		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, VR().rhinoTex, 0); // stays down here
+		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, VR().rhinoTexSet[eye], 0); // stays down here
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->OGL.TexId, 0);
 		// Do the copy.
-		glBlitFramebuffer(0, 0, theTexW, theTexH, 0, 0, ovrTexW, ovrTexH, GL_COLOR_BUFFER_BIT, GL_NEAREST); // BLIT IT HOME MORTY
+		glBlitFramebuffer(0, 0, theTexW[eye], theTexH[eye], 0, 0, ovrTexW, ovrTexH, GL_COLOR_BUFFER_BIT, GL_NEAREST); // BLIT IT HOME MORTY
 
 		// Avoids an error when calling SetAndClearRenderSurface during next iteration.
 		// Without this, during the next while loop iteration SetAndClearRenderSurface
@@ -467,7 +485,6 @@ void CVRaptorPlugIn::OVRDoTracking()	// also this should take & hit a pointer, n
 		// then setcams (2nd for, so simulteneous)
 		// then redraw
 	}
-
 }
 
 void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[] to update lView & rView
@@ -476,7 +493,7 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	// & call in framebuffer end. or same as other conduit? where are we going to let up?
 
 	// in endless loop w/ no escape. finally we are at the timing & updates problem.
-	
+
 	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
 	lView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[0]);
 	lView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[0]);
@@ -484,9 +501,12 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
-	
+
 	lView->Redraw(); // this is no bueno -> call render to dib next;
 	rView->Redraw();
+
+	RhinoApp().Wait(16);
+
 }
 
 void CVRaptorPlugIn::HMDViewsUpdate()

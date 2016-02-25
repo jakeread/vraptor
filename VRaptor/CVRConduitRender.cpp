@@ -40,22 +40,68 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 	HDC rhinoHDC = GetDC(rhinoHWND);
 	*/
 
+	if (VR().disableConduits == true)
+	{
+		this->Disable();
+	}
+
   switch( nChannel )
   {
-	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER:
+	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER: 
+		// you've gotta build this differently. 
+		// class should know which (lview or rview) it is, the check is not robust enough.
+		// and there is much else restructuring to do.
+		// missed this bet but OK there are bigger fish! Keep it in your head.
 		//RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
 
-		VR().currentDib = VR().rView->DisplayPipeline()->GetFrameBuffer();
-		//VR().currentDib.SaveBmp(VR().currentDibFile); // WRITE IT. LEAVE IT.
-		VR().HMDRender(); // will flip to it's OGL context
+		GUID theConduitVPID = dp.GetRhinoVP().ViewportId();
+		GUID rightViewVPID = VR().rView->MainViewport().ViewportId();
+		GUID leftViewVPID = VR().lView->MainViewport().ViewportId();
 
-		// just after render, do tracking
-		
-		VR().OVRDoTracking();
+		if ( theConduitVPID == leftViewVPID)
+		{
+			int rl = 0;
+			VR().currentDib[rl] = VR().lView->DisplayPipeline()->GetFrameBuffer();
+			VR().leftRenderSetTrack = 1;
+		}
 
-		// maybe we just hit a 'render switch' here... like 'New frame is Ready!'. 
-		// ovr OGL is always looking. sets flag back to 0 once it has pushed frame thru.
-		// and this is looking for a 'ready to track' flag.. ovr sets that.
+		if ( theConduitVPID == rightViewVPID )
+		{
+			int rl = 1;
+			VR().currentDib[rl] = VR().rView->DisplayPipeline()->GetFrameBuffer();
+			VR().rightRenderSetTrack = 1;
+		}
+
+		if ( !(theConduitVPID == leftViewVPID) && !(theConduitVPID == rightViewVPID) )
+		{
+			RhinoApp().Print(L"couldn't find a Left or Right VR View on POSTPROCESS at Render Conduit\n");
+
+			RhinoApp().Print(L"theConduitVPID \t");
+			VR().rhinoPrintGuid(theConduitVPID);
+
+			RhinoApp().Print(L"theRightVPID \t");
+			VR().rhinoPrintGuid(rightViewVPID);
+
+			RhinoApp().Print(L"theLeftVPID \t");
+			VR().rhinoPrintGuid(leftViewVPID);
+
+			VR().disableConduits = true;
+		}
+
+		if (true) // if no render, do it regardless. endless loop not initiated
+		{
+			VR().leftRenderSetTrack = 1;
+			VR().rightRenderSetTrack = 1;
+		}
+
+		if (VR().leftRenderSetTrack == 1 && VR().rightRenderSetTrack == 1) // do we have both dibs?
+		{
+			RhinoApp().Print(L"THROWING RENDER\n");
+			VR().HMDRender(); // will flip to it's OGL context, and render 2 dibs...
+			// VR().OVRDoTracking(); // do it 2 next
+			VR().leftRenderSetTrack = 0;
+			VR().rightRenderSetTrack = 0;
+		}
 
 		// HGLRC rhinoHGLRC = VR().rView->DisplayPipeline()->GetDrawDC; cannot find
 
@@ -64,36 +110,6 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 		break;
 		// need that break, else conduit does not finish, display pipeline becomes upset. then render later.
 		// also we keep out DIB / Rhino and our Texture / OVR code in different playpens
-
-	case CSupportChannels::SC_CALCBOUNDINGBOX:
-		RhinoApp().Print(L"execConduit: \tSC_CALCBOUNDINGBOX\n");
-
-		// FIGURINZ
-
-		// three UINT
-		VR().tick = VR().rView->DisplayPipeline()->GetFrameTick(); // abs clock time -> clock cycles since Rhino Launched.
-		VR().tickDelta = VR().rView->DisplayPipeline()->GetFrameTickDelta(); // clock cycles since current frame drawing began
-		VR().frameEta = VR().rView->DisplayPipeline()->GetFrameETA(); // estimated time of next frame arrival. I think also clock cycles.
-
-		RhinoApp().Print(L"GetFrameTick() \t \t %i\n", VR().tick);
-		RhinoApp().Print(L"GetFrameTickDelta() \t %i\n", VR().tickDelta); // not behaving as expected
-		RhinoApp().Print(L"GetFrameEta() \t \t %i\n\n", VR().frameEta);
-
-		//RhinoApp().Wait(16);
-
-		// these two are disabled for now while we init & debug HMD Rendering
-		//VR().HMDViewsUpdate();
-		
-		// how to add wait here ??
-
-		//VR().HMDViewsRender();
-
-		break;
-
-	case CSupportChannels::SC_INITFRAMEBUFFER: // ah: incoming nChannel is one of these SC_FLAGS and we watch for INITFRAMEBUFFER
-		RhinoApp().Print(L"execConduit: \tSC_INITFRAMEBUFFER\n");
-
-		break;
 
   }
   return true;

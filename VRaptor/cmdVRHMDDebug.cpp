@@ -32,7 +32,7 @@ static class CCommandVRHMDDebug theVRHMDDebugCommand;
 CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext& context )
 {
 	ON_wString wStr;
-	wStr.Format( L"HMD DEBUG: TRYNA THROW IT UP\n");
+	wStr.Format( L"HMD DEBUG: NOT RELEVANT CURRENTLY\n");
 	RhinoApp().Print( wStr );
 
 	if (VR().renderTrack == 0) {

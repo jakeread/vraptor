@@ -40,17 +40,19 @@ public:
 	void makeMortyTex();
 
 	GLuint rhinoTex;
-	GLuint rhinoTexSet[20];
+	GLuint rhinoTexSet[2];
 	GLuint mortyTex;
 	GLuint theTex;
 
-	GLint theTexW;
-	GLint theTexH;
+	GLint theTexW[2];
+	GLint theTexH[2];
+
+	GLint mortyTexW;
+	GLint mortyTexH;
 
 	int renderTrack;
 
-	GLuint readBufferTexLeft;
-
+	GLuint readBufferTexLeft; // should eliminate sided-ness
 	GLuint drawBufferTexLeft;
 
 	void HMDDisplayAnything(); // depreciated
@@ -66,6 +68,16 @@ public:
 
 	void RHCamsUpdate();
 
+	void rhinoPrintGuid(GUID guid);
+
+	bool disableConduits;
+
+	
+	/*
+	CVRConduitRender* conduitUpdatePointers[2];
+	CVRConduitUpdate* conduitRenderPointers[2];
+	*/
+
 // OVR THINGS
 	ovrSession HMD;
 	ovrResult resultSubmit;
@@ -76,13 +88,21 @@ public:
 // MAGIC: THE VIEWS;
 	CRhinoView* lView;
 	CRhinoView* rView;
+	int doubleCount;
 
 // GRAPHICS RHINOSIDE
-	CRhinoUiDib currentDib; // this gets saved
+	CRhinoUiDib currentDib[2]; // this gets saved
+
 	LPCTSTR currentDibFile;
-	GLsizei rhDibW;
-	GLsizei rhDibH;
-	CRect vrRect;
+
+	GLsizei rhDibW[2];
+	GLsizei rhDibH[2];
+
+	CRect vrLeftRect;
+	CRect vrRightRect;
+
+	int leftRenderSetTrack;
+	int rightRenderSetTrack;
 
 
 // TRACKING

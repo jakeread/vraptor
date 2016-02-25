@@ -29,11 +29,13 @@ public:
 	CRhinoCommand::result RunCommand( const CRhinoCommandContext& );
 
 public:
+
 	CVRConduitRender vrConduitLeft;
 	CVRConduitRender vrConduitRight;
 
 	CVRConduitUpdate vrConduitUpdateLeft;
 	CVRConduitUpdate vrConduitUpdateRight;
+
 };
 
 // The one and only CCommandInitVR object
@@ -133,32 +135,34 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	/////////////////////////// PIPELINE INIT
 
-	lView->Redraw();
-	rView->Redraw();
-
-	VR().rView->GetClientRect(VR().vrRect);
-
-	VR().currentDib.CreateDib(VR().vrRect.Width(), VR().vrRect.Height(), 32, true); // setup with proper color depth
+	VR().lView->Redraw();
+	VR().rView->Redraw();
 
 	VR().currentDibFile = L"D:/ppfbDib.bmp";
 
+	VR().disableConduits = false;
+
 	VR().InitHMD();
 	
-	vrConduitLeft.Bind( *lView);
-	vrConduitRight.Bind( *rView);
+	vrConduitLeft.Bind( *VR().lView);
+	vrConduitRight.Bind( *VR().rView);
 
-	vrConduitUpdateLeft.Bind( *lView);
-	vrConduitUpdateRight.Bind( *rView);
+	//vrConduitUpdateLeft.Bind( *VR().lView);
+	//vrConduitUpdateRight.Bind( *VR().rView);
 
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
 	vrConduitLeft.Enable();
 	vrConduitRight.Enable();
 
-	vrConduitUpdateLeft.Enable();
-	vrConduitUpdateRight.Enable();
+	//vrConduitUpdateLeft.Enable();
+	//vrConduitUpdateRight.Enable();
 
 	//////////////////////////// TEMP RENDER LOOP
 
+	/*
+	VR().conduitUpdatePointers = { &vrConduitUpdateLeft, &vrConduitUpdateRight };
+	VR().conduitRenderPointers = { &vrConduitLeft, &vrConduitRight };
+	*/
 
 	RhinoApp().Print(L"all should be init, now call HMDRender via debug\n");
 

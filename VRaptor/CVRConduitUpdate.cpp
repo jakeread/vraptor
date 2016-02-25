@@ -39,11 +39,17 @@ bool CVRConduitUpdate::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 	HWND rhinoHWND = VR().rView->GetSafeHwnd();
 	HDC rhinoHDC = GetDC(rhinoHWND);
 	*/
+	if (VR().disableConduits == true)
+	{
+		this->Disable();
+	}
 
   switch( nChannel )
   {
   case CSupportChannels::SC_INITFRAMEBUFFER:
 		RhinoApp().Print(L"execConduit: \tSC_INITFRAMEBUFFER\n");
+
+		// only do if render is back at 0 ?
 
 		VR().RHCamsUpdate();
 
