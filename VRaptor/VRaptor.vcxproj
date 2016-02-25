@@ -289,12 +289,10 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cmdInitVR.cpp" />
     <ClCompile Include="cmdVRaptor.cpp" />
     <ClCompile Include="cmdVRCreateViewSample.cpp" />
     <ClCompile Include="cmdVRHMDDebug.cpp" />
-    <ClCompile Include="cmdVRHMDDestroy.cpp" />
-    <ClCompile Include="cmdVRHmdInit.cpp" />
-    <ClCompile Include="cmdVRHMDPrintUpdate.cpp" />
     <ClCompile Include="cmdVRHMDViewsUpdate.cpp" />
     <ClCompile Include="CVRConduit.cpp" />
     <ClCompile Include="stdafx.cpp">

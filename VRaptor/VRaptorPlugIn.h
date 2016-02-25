@@ -30,16 +30,17 @@ public:
 	BOOL AddToPlugInHelpMenu() const;
 	BOOL OnDisplayPlugInHelp( HWND hWnd ) const;
 
+
 // INITS
-	void OvrWinWomb();
-	void HMDInit();
+	void InitOvrWinWomb();
+	void InitHMD();
 
 // GL UTIL
-	void makeRhinoTex(CRhinoView* theView);
-
-	void glCleanAndBindBuffers();
+	//void makeRhinoTex(CRhinoUiDib* incomingDib);
+	void makeMortyTex();
 
 	GLuint rhinoTex;
+	GLuint rhinoTexSet[20];
 	GLuint mortyTex;
 	GLuint theTex;
 
@@ -56,9 +57,10 @@ public:
 	void HMDDisplayWithDocCode();
 
 	void HMDDestroy();
-	void HMDPrintUpdate();
 	void HMDViewsUpdate();
 	void HMDRender();
+
+
 	void OVRtoRHCams(ovrPosef pose[2]);
 
 // OVR THINGS
@@ -66,13 +68,19 @@ public:
 	ovrResult resultSubmit;
 	ovrHmdDesc hmdDesc;
 	ovrSizei resolution;
+	ovrGLTexture * mirrorTexture;
 
 // MAGIC: THE VIEWS;
 	CRhinoView* lView;
 	CRhinoView* rView;
 
-// GRAPHICS
-	ovrGLTexture * mirrorTexture;
+// GRAPHICS RHINOSIDE
+	CRhinoUiDib currentDib; // this gets saved
+	LPCTSTR currentDibFile;
+	GLsizei rhDibW;
+	GLsizei rhDibH;
+	CRect vrRect;
+
 
 // TRACKING
 	ovrVector3f ViewOffset[2]; // is - const - in OVR example so don't fuck with
@@ -90,6 +98,8 @@ private:
 	TextureBuffer * eyeRenderTexture[2];
 	DepthBuffer * eyeDepthBuffer[2];
 	GLuint mirrorFBO;
+
+
 
 	ovrTrackingState OVRDoTracking();
 	ovrTrackingState ts; 

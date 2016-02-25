@@ -32,12 +32,14 @@ static class CCommandVRHMDDebug theVRHMDDebugCommand;
 CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext& context )
 {
 	ON_wString wStr;
-	wStr.Format( L"HMD DEBUG: Calling HMDRener() 200x \n");
+	wStr.Format( L"HMD DEBUG: TRYNA THROW IT UP\n");
 	RhinoApp().Print( wStr );
 
-	VR().HMDInit();
-
-	for(int i=0; i<20; i++) {
+	if (VR().renderTrack == 0) {
+		VR().InitHMD();
+	}
+	
+	for(int i=0; i<2; i++) {
 		VR().HMDRender(); // setup so we can call this once views are set
 	}
 

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 //
-// BEGIN VRHmdInit command
+// BEGIN InitVR command
 //
 
 #include "StdAfx.h"
@@ -10,22 +10,22 @@
 
 // REALLY this is viewport init... on re-structure make that clear.
 
-#pragma region VRHmdInit command 
+#pragma region InitVR command 
 
-class CCommandVRHMDInit : public CRhinoCommand
+class CCommandInitVR : public CRhinoCommand
 {
 public:
-	CCommandVRHMDInit() {}
-	~CCommandVRHMDInit() {}
+	CCommandInitVR() {}
+	~CCommandInitVR() {}
 	UUID CommandUUID()
 	{
 		// {CD2317C9-7C38-4AD4-802F-6409B7D20303}
-		static const GUID VRHMDInitCommand_UUID =
+		static const GUID InitVRCommand_UUID =
 		{ 0xCD2317C9, 0x7C38, 0x4AD4, { 0x80, 0x2F, 0x64, 0x09, 0xB7, 0xD2, 0x03, 0x03 } };
-		return VRHMDInitCommand_UUID;
+		return InitVRCommand_UUID;
 	}
-	const wchar_t* EnglishCommandName() { return L"VRHMDInit"; }
-	const wchar_t* LocalCommandName() const { return L"VRHMDInit"; }
+	const wchar_t* EnglishCommandName() { return L"InitVR"; }
+	const wchar_t* LocalCommandName() const { return L"InitVR"; }
 	CRhinoCommand::result RunCommand( const CRhinoCommandContext& );
 
 public:
@@ -33,10 +33,10 @@ public:
 	CVRConduit vrConduitRight;
 };
 
-// The one and only CCommandVRHMDInit object
-static class CCommandVRHMDInit theVRHMDInitCommand;
+// The one and only CCommandInitVR object
+static class CCommandInitVR theInitVRCommand;
 
-CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext& context )
+CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& context )
 {
 	VR().VRLaunchContext = &context; // CHEAT. Or take some time to understand
 	// how Rhino contexts work
@@ -133,6 +133,14 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 	lView->Redraw();
 	rView->Redraw();
 
+	VR().rView->GetClientRect(VR().vrRect);
+
+	VR().currentDib.CreateDib(VR().vrRect.Width(), VR().vrRect.Height(), 32, true); // setup with proper color depth
+
+	VR().currentDibFile = L"D:/ppfbDib.bmp";
+
+	VR().InitHMD();
+	
 	vrConduitLeft.Bind( *lView);
 	vrConduitRight.Bind( *rView);
 
@@ -142,7 +150,6 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 
 	//////////////////////////// TEMP RENDER LOOP
 
-	//VR().HMDInit();
 
 	RhinoApp().Print(L"all should be init, now call HMDRender via debug\n");
 
@@ -154,7 +161,7 @@ CRhinoCommand::result CCommandVRHMDInit::RunCommand( const CRhinoCommandContext&
 #pragma endregion
 
 //
-// END VRHMDInit command
+// END InitVR command
 //
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////

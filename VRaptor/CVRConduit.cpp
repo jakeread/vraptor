@@ -34,22 +34,40 @@ bool CVRConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTe
 {
 	RhinoApp().Print(L"ExecConduit top\n");
 	// do shit when conduit it executed?
-	CRhinoUiDib ppfbDib;
-	CDisplayPipelineAttributes * cdpa = &CDisplayPipelineAttributes();
-	LPCTSTR ppfbDibFile = L"D:/ppfbDib.bmp";
+
+	int texInspectW;
+	int texInspectH;
+
+	
+	HWND rhinoHWND = VR().rView->GetSafeHwnd();
+	HDC rhinoHDC = GetDC(rhinoHWND);
+
 
   switch( nChannel )
   {
-
 	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER:
 		RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
-		ppfbDib = VR().rView->DisplayPipeline()->GetFrameBuffer();
-		ppfbDib.SaveBmp(ppfbDibFile);
+		VR().rView->GetClientRect(VR().vrRect);
+		VR().currentDib.CreateDib(VR().vrRect.Width(), VR().vrRect.Height(), 32, true); // setup with proper color depth
 		
-		// CALL send to HMD
-		// how to make class independent of view?
+		VR().currentDib = VR().rView->DisplayPipeline()->GetFrameBuffer();
+		VR().currentDib.SaveBmp(VR().currentDibFile); // WRITE IT. LEAVE IT.
+		
+		VR().HMDRender(); // will flip to it's OGL context
 
+		// amaze. congrats.
+
+		// maybe we just hit a 'render switch' here... like 'New frame is Ready!'. 
+		// ovr OGL is always looking. sets flag back to 0 once it has pushed frame thru.
+		// and this is looking for a 'ready to track' flag.. ovr sets that.
+
+		// HGLRC rhinoHGLRC = VR().rView->DisplayPipeline()->GetDrawDC; cannot find
+
+		// wglMakeCurrent(rhinoHDC, NULL); // flip back to rhino ogl context b4 proceeding?
+		
 		break;
+		// need that break, else conduit does not finish, display pipeline becomes upset. then render later.
+		// also we keep out DIB / Rhino and our Texture / OVR code in different playpens
 
 	case CSupportChannels::SC_CALCBOUNDINGBOX:
 		RhinoApp().Print(L"execConduit: \tSC_CALCBOUNDINGBOX\n");
