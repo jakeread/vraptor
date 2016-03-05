@@ -62,6 +62,8 @@ public:
 	void HMDViewsUpdate();
 	void HMDRender();
 
+	void ManualDibDraw();
+
 	void OVRDoTracking();
 	ovrTrackingState ts;
 	ovrPosef tsEyePoses[2]; // left and right.. final

@@ -30,8 +30,8 @@ public:
 
 public:
 
-	CVRConduitRender vrConduitLeft;
-	CVRConduitRender vrConduitRight;
+	CVRConduitRender vrConduitRenderLeft;
+	CVRConduitRender vrConduitRenderRight;
 
 	CVRConduitUpdate vrConduitUpdateLeft;
 	CVRConduitUpdate vrConduitUpdateRight;
@@ -144,15 +144,15 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	VR().InitHMD();
 	
-	vrConduitLeft.Bind( *VR().lView);
-	vrConduitRight.Bind( *VR().rView);
+	//vrConduitRenderLeft.Bind( *VR().lView);
+	//vrConduitRenderRight.Bind( *VR().rView);
 
-	//vrConduitUpdateLeft.Bind( *VR().lView);
-	//vrConduitUpdateRight.Bind( *VR().rView);
+	vrConduitUpdateLeft.Bind( *VR().lView);
+	vrConduitUpdateRight.Bind( *VR().rView);
 
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
-	vrConduitLeft.Enable();
-	vrConduitRight.Enable();
+	vrConduitRenderLeft.Enable();
+	vrConduitRenderRight.Enable();
 
 	//vrConduitUpdateLeft.Enable();
 	//vrConduitUpdateRight.Enable();

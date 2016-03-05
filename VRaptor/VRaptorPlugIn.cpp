@@ -264,6 +264,15 @@ void CVRaptorPlugIn::makeRhinoTex(CRhinoUiDib* incomingDib) //
 }
 */
 
+void CVRaptorPlugIn::ManualDibDraw()
+{
+	for(int rl = 0; rl < 2; rl ++)
+	{
+		VR().lView->DisplayPipeline()->DrawToDib(VR().currentDib[rl], VR().currentDib[rl].Width(), VR().currentDib[rl].Height(), VR().lView->DisplayAttributes());
+		// and perhaps we can setup these dibs to not even belong to a VP... 
+	}
+}
+
 void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
 {
 	
@@ -512,6 +521,7 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 void CVRaptorPlugIn::HMDViewsUpdate()
 {
 	OVRDoTracking(); // to update all vals
+	RHCamsUpdate();
 }
 
 /////////////////////////////////////////////////////////////////////////////

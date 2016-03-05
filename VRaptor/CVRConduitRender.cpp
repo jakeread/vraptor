@@ -48,10 +48,37 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
   switch( nChannel )
   {
 	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER: 
-		// you've gotta build this differently. 
-		// class should know which (lview or rview) it is, the check is not robust enough.
-		// and there is much else restructuring to do.
-		// missed this bet but OK there are bigger fish! Keep it in your head.
+		/*
+
+		// going to try a dumb update loop ...
+
+		// then will try to restructure these conduits.
+		can we have just one and update the eye render dibs manually, as below?
+
+		// and need to do lview->vp->drawToDib()  I think. push lview & rviews 
+		through on a single
+		conduit / view which is *basically* your mirror buffer. lview & rview become 'dummies'
+		and mouse / ux / interaction happens in a single fullscreen view for mouse...
+
+		you've gotta build this differently. 
+		class should know which (lview or rview) it is, the check is not robust enough.
+		and there is much else restructuring to do.
+		missed this bet but OK there are bigger fish! Keep it in your head.
+
+		right now all timing is basically off. the big question is how do we know when we have two
+		fresh DIBS? How do we push a render through in a healthy way?
+
+		then we need to do the position update, probably on some timer.. another bit to figure.
+
+		we are getting errors for 'illegal camera position change' so look / learn from some
+		rhino examples re: cam changes
+		
+		watch for & avoid FPU errors - or check this FPUdirty thing.
+
+		home stretch for the rendering core though... this might work!
+
+		*/
+
 		//RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
 
 		GUID theConduitVPID = dp.GetRhinoVP().ViewportId();

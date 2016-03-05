@@ -35,12 +35,12 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	wStr.Format( L"HMD DEBUG: NOT RELEVANT CURRENTLY\n");
 	RhinoApp().Print( wStr );
 
-	if (VR().renderTrack == 0) {
+	if (false) { //VR().renderTrack == 0
 		VR().InitHMD();
 	}
 	
-	for(int i=0; i<2; i++) {
-		VR().HMDRender(); // setup so we can call this once views are set
+	for(int i=0; i<200; i++) {
+		VR().HMDViewsUpdate();
 	}
 
 	//VR().HMDDisplayAnything();
