@@ -32,14 +32,14 @@ static class CCommandVRHMDDebug theVRHMDDebugCommand;
 CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext& context )
 {
 	ON_wString wStr;
-	wStr.Format( L"HMD DEBUG: NOT RELEVANT CURRENTLY\n");
+	wStr.Format( L"HMD DEBUG: THROWING 2000 UPDATES 2 U\n");
 	RhinoApp().Print( wStr );
 
 	if (false) { //VR().renderTrack == 0
 		VR().InitHMD();
 	}
 	
-	for(int i=0; i<200; i++) {
+	for(int i=0; i<2000; i++) {
 		VR().HMDViewsUpdate();
 	}
 

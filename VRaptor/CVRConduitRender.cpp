@@ -48,6 +48,8 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
   switch( nChannel )
   {
 	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER: 
+
+		RhinoApp().Print(L"firingContuit at PostProcess at Render\n");
 		/*
 
 		// going to try a dumb update loop ...
@@ -123,7 +125,7 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 
 		if (VR().leftRenderSetTrack == 1 && VR().rightRenderSetTrack == 1) // do we have both dibs?
 		{
-			RhinoApp().Print(L"THROWING RENDER\n");
+			//RhinoApp().Print(L"THROWING RENDER\n");
 			VR().HMDRender(); // will flip to it's OGL context, and render 2 dibs...
 			// VR().OVRDoTracking(); // do it 2 next
 			VR().leftRenderSetTrack = 0;

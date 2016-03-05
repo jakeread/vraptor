@@ -85,6 +85,7 @@ public:
 	ovrResult resultSubmit;
 	ovrHmdDesc hmdDesc;
 	ovrSizei resolution;
+	ovrSizei idealTextureSize;
 	ovrGLTexture * mirrorTexture;
 
 // MAGIC: THE VIEWS;
@@ -115,6 +116,9 @@ public:
 	UINT tickDelta;
 	UINT frameEta;
 
+//// OTHERS
+	float scaleMult;
+
 private:
 
 	ovrGraphicsLuid luid;
@@ -132,6 +136,7 @@ private:
 	OVR::Quat<float> eyePoseQuats[2];
 	ON_3dVector upBase;
 	ON_3dVector dirBase;
+	ON_3dPoint locBase; // use for location prior to ovr tracking / positioning
 	OVR::Vector3<float> rotationVector;
  
 /// cams 
@@ -139,9 +144,6 @@ private:
 	ON_3dPoint camLoc[2];
 	ON_3dVector camDir[2];
 	ON_3dVector camUp[2];
-
-//// OTHERS
-	float scaleMult;
 
 private:
   ON_wString m_plugin_version;

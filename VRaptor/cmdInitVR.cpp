@@ -88,14 +88,28 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 			{
 				if (lr > 0) // and if lr already found 1
 				{
-					rView = tempView; // right is 2nd view we find 
+					rView = tempView; // right is 2nd view we find
 					break;
 				// so this breaks when we find, and lView is left as the viewList[i] where we found the new viewport, whose ID was not in our list.
 				// and we are left with lView being = viewList[i] at new view
 				}
 				if (lr == 0)
 				{
-					lView = tempView; // left is 1st view
+					lView = tempView;
+
+					/*
+					CFrameWnd *lFrameWnd;
+					lFrameWnd = lView->FloatRhinoView(true);
+					HWND lHWnd = lFrameWnd->GetSafeHwnd();
+					// can update one position, but when both it fails?
+					
+					bool setWnd = SetWindowPos(lHWnd, HWND_TOP, 0, 960/2, 960/2, 1080/2, SWP_NOACTIVATE);  // set up a window placement 
+					if (setWnd == 0)
+					{
+						RhinoApp().Print(L"windowSet failed at lView\n");
+					}
+					*/
+
 					lr = 1;
 				}
 			}
@@ -110,27 +124,54 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	if (lView && rView)
 	{
-		for (int i = 0; i < 2; i++)
+		for (int rl = 0; rl < 2; rl++)
 		{
-			// 			RhinoApp().ActiveView()->
-			ON_3dmView onView = lrViews[i]->ActiveViewport().View();
+			
+			// more properly we need a popup for our interface window & then to dumb render into
+			// https://msdn.microsoft.com/en-us/library/windows/desktop/ms633545%28v=vs.85%29.aspx
 
-			if(i == 0)
+			if (rl == 1) // if we do this to both the conduits break. restructuring them anyways, so onward:
+			{
+				CFrameWnd *rFrameWnd;
+				rFrameWnd = lrViews[rl]->FloatRhinoView(true); // returns pointer to the view's parent container
+				HWND rHWnd = rFrameWnd->GetSafeHwnd();
+
+				const CWnd *cwndptr = &CWnd::wndNoTopMost;
+			
+				bool setWndThru = rFrameWnd->SetWindowPos(cwndptr, 960/(rl+1), 960/2, 960/2, 1080/2, SWP_NOACTIVATE);
+
+				//bool setWndThru = lrViews[rl]->SetWindowPos(cwndptr, 960/(rl+1), 960/2, 960/2, 1080/2, SWP_SHOWWINDOW);
+				if (setWndThru == 0)
+				{
+					RhinoApp().Print(L"windowSet failed at rView\n");
+				} 
+				/*
+				bool setWnd = SetWindowPos(rHWnd, HWND_TOP, 960/(rl+1), 960/2, 960/2, 1080/2, SWP_NOACTIVATE);  // set up a window placement 
+				if (setWnd == 0)
+				{
+					RhinoApp().Print(L"windowSet failed at rView\n");
+				} 
+				*/
+			}
+
+
+			ON_3dmView onView = lrViews[rl]->ActiveViewport().View();
+
+			if(rl == 0)
 				onView.m_name = L"lView";
 				//lrViews[i]->MoveWindow(0,0,VR().resolution.w/2,VR().resolution.h, true);
-			if(i == 1)
+			if(rl == 1)
 				onView.m_name = L"rView";
 				//lrViews[i]->MoveWindow(960,0,VR().resolution.w/2,VR().resolution.h, true);
-			lrViews[i]->ActiveViewport().SetView(onView);
-			lrViews[i]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,35);
-			//lrViews[i]->FloatRhinoView(true);
-			lrViews[i]->Redraw();
+			lrViews[rl]->ActiveViewport().SetView(onView);
+			lrViews[rl]->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,24);
+			lrViews[rl]->Redraw();
 		}
 	}
 
 	VR().lView = lView; // pass views to our plugin object 
 	VR().rView = rView;
-
+	
 	//////////////////////////////// END VIEWS INIT
 
 	/////////////////////////// PIPELINE INIT
@@ -165,6 +206,8 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	*/
 
 	RhinoApp().Print(L"all should be init, now call HMDRender via debug\n");
+
+	VR().scaleMult = 50;
 
 	return CRhinoCommand::success;
 

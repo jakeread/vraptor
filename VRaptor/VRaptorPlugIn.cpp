@@ -140,8 +140,8 @@ void CVRaptorPlugIn::InitHMD()
 
 	// Make eye render buffers
     for (int eye = 0; eye < 2; ++eye)
-    { 
-		ovrSizei idealTextureSize = ovr_GetFovTextureSize(VR().HMD, ovrEyeType(eye), VR().hmdDesc.DefaultEyeFov[eye], 1);
+    {  // try next to do idealTextureSize before window creation. have to call hmdInit before, then
+		idealTextureSize = ovr_GetFovTextureSize(VR().HMD, ovrEyeType(eye), VR().hmdDesc.DefaultEyeFov[eye], 1);
         VR().eyeRenderTexture[eye] = new TextureBuffer(VR().HMD, true, true, idealTextureSize, 1, NULL, 1); // IS CAUSING THIS TO THROW 000z 316
         VR().eyeDepthBuffer[eye]   = new DepthBuffer(eyeRenderTexture[eye]->GetSize(), 0);
 		// dunwuntthis
@@ -212,7 +212,7 @@ void CVRaptorPlugIn::InitHMD()
 	VR().rView->GetClientRect(VR().vrRightRect);
 	VR().currentDib[1].CreateDib(VR().vrRightRect.Width(), VR().vrRightRect.Height(), 32, true); // setup with proper color depth
 
-	makeMortyTex();
+	//makeMortyTex();
 }
 
 void CVRaptorPlugIn::rhinoPrintGuid(GUID guid) {
@@ -456,8 +456,8 @@ void CVRaptorPlugIn::OVRDoTracking()	// also this should take & hit a pointer, n
 			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
 	{
-		// straight to eye poses, big TY to ovr for this offsets maths.
-		ovr_CalcEyePoses(ts.HeadPose.ThePose, ViewOffset, tsEyePoses); // yall got 0's in your offset vector
+		// straight to eye poses, big TY to ovr for the offsets maths
+		ovr_CalcEyePoses(ts.HeadPose.ThePose, ViewOffset, tsEyePoses);
 
 		// setup all relevant values to do next moves
 		// already have all things in ts and tsEyePoses
@@ -470,29 +470,33 @@ void CVRaptorPlugIn::OVRDoTracking()	// also this should take & hit a pointer, n
 	}
 
 	////// & convert to Rhino Cam Data, for reset later...
-	for (int i = 0; i< 2; i++)
+	for (int rl = 0; rl < 2; rl++)
 	{
-		// gotta flip some of these x's and y'z
-		rotationVector = eyePoseQuats[i].ToRotationVector();
+
+		/* SET LOCATIONS
+		RHINO		OVR
+		X		=	X
+		Y		=	-Z
+		Z		=	Y
+		*/
+		rotationVector = eyePoseQuats[rl].ToRotationVector();
 
 		dirBase = ON_3dVector(0.0, 1.0, 0.0);
 		upBase = ON_3dVector(0.0, 0.0, 1.0); // these can be local, are not
+		locBase = ON_3dPoint(-10,-100,10);
 
-		dirBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, rotationVector.y, rotationVector.z) );
-		upBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, rotationVector.y, rotationVector.z) );
+		dirBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, -rotationVector.z, rotationVector.y) );
+		upBase.Rotate( rotationVector.Length() , ON_3dVector( rotationVector.x, -rotationVector.z, rotationVector.y) );
 
 		// set 'em all
-		camDir[i] = dirBase;
-		camUp[i] = upBase; // there's a chance dir and up can be called only once; given parallel eyes
-		// set location
-		camLoc[i] = scaleMult * ON_3dPoint(tsEyePoses[i].Position.x, tsEyePoses[i].Position.y, tsEyePoses[i].Position.z);
+		camDir[rl] = dirBase;
+		camUp[rl] = upBase; // there's a chance dir and up can be called only once; given parallel eyes
+		camLoc[rl] = locBase + scaleMult * ON_3dPoint(tsEyePoses[rl].Position.x, -tsEyePoses[rl].Position.z, tsEyePoses[rl].Position.y);
 
-		// ship it 2 console 4 debug
-		RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
-		RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
+		//RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
+		//RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
 
-		// then setcams (2nd for, so simulteneous)
-		// then redraw
+		// redraw
 	}
 }
 
