@@ -144,11 +144,11 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	VR().InitHMD();
 	
-	//vrConduitRenderLeft.Bind( *VR().lView);
-	//vrConduitRenderRight.Bind( *VR().rView);
+	vrConduitRenderLeft.Bind( *VR().lView);
+	vrConduitRenderRight.Bind( *VR().rView); // was working without this. odd.
 
-	vrConduitUpdateLeft.Bind( *VR().lView);
-	vrConduitUpdateRight.Bind( *VR().rView);
+	//vrConduitUpdateLeft.Bind( *VR().lView);
+	//vrConduitUpdateRight.Bind( *VR().rView);
 
 	//////////////////////////// FIRE IN THE HOLE (right only for now)
 	vrConduitRenderLeft.Enable();

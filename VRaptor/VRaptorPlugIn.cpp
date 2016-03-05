@@ -472,7 +472,7 @@ void CVRaptorPlugIn::OVRDoTracking()	// also this should take & hit a pointer, n
 	////// & convert to Rhino Cam Data, for reset later...
 	for (int i = 0; i< 2; i++)
 	{
-		// make the rotation vector & rotate some base vectors (we are operating absolute, not relative to last move)
+		// gotta flip some of these x's and y'z
 		rotationVector = eyePoseQuats[i].ToRotationVector();
 
 		dirBase = ON_3dVector(0.0, 1.0, 0.0);
@@ -498,10 +498,8 @@ void CVRaptorPlugIn::OVRDoTracking()	// also this should take & hit a pointer, n
 
 void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[] to update lView & rView
 {
-	// need to set new locations, probably BEFORE start of next render. so makes sense to run it in a conduit
-	// & call in framebuffer end. or same as other conduit? where are we going to let up?
-
-	// in endless loop w/ no escape. finally we are at the timing & updates problem.
+	// doing dumb update
+	// set proper rotations etc with new XYZ data / flipped coordinate systems
 
 	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
 	lView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[0]);
@@ -511,17 +509,18 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
 
-	lView->Redraw(); // this is no bueno -> call render to dib next;
+
+	lView->Redraw(); // doing this sends dib thru to OVR pretty nicely
 	rView->Redraw();
 
-	RhinoApp().Wait(16);
+	RhinoApp().Wait(16); // and our pass off, still neglected
 
 }
 
 void CVRaptorPlugIn::HMDViewsUpdate()
 {
 	OVRDoTracking(); // to update all vals
-	RHCamsUpdate();
+	RHCamsUpdate(); // to set cams & redraw, calling OVR in conduit.
 }
 
 /////////////////////////////////////////////////////////////////////////////
