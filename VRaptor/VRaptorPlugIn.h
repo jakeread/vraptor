@@ -15,10 +15,6 @@ public:
 	CVRaptorPlugIn();
 	~CVRaptorPlugIn();
 
-	const CRhinoCommandContext *VRLaunchContext; 
-	// don't think this is safe...
-	// probably it changes every time a command is launched...
-
 // Required overrides
 	const wchar_t* PlugInName() const;
 	const wchar_t* PlugInVersion() const;
@@ -34,69 +30,32 @@ public:
 // INITS
 	void InitOvrWinWomb();
 	void InitHMD();
+	void InitView(CRhinoView *newView, int num);
 
-// GL UTIL
-	//void makeRhinoTex(CRhinoUiDib* incomingDib);
-	void makeMortyTex();
-
-	GLuint rhinoTex;
-	GLuint rhinoTexSet[2];
-	GLuint mortyTex;
-	GLuint theTex;
-
-	GLint theTexW[2];
-	GLint theTexH[2];
-
-	GLint mortyTexW;
-	GLint mortyTexH;
-
-	int renderTrack;
-
-	GLuint readBufferTexLeft; // should eliminate sided-ness
-	GLuint drawBufferTexLeft;
-
-	void HMDDisplayAnything(); // depreciated
-	void HMDDisplayWithDocCode();
-
-	void HMDDestroy();
+// RUNTIME
 	void HMDViewsUpdate();
 	void HMDRender();
-
-	void ManualDibDraw();
-
 	void OVRDoTracking();
-	ovrTrackingState ts;
-	ovrPosef tsEyePoses[2]; // left and right.. final
-
 	void RHCamsUpdate();
 
+// Utilities & Destroyers & Debug
 	void rhinoPrintGuid(GUID guid);
-
-	bool disableConduits;
-
-	
-	/*
-	CVRConduitRender* conduitUpdatePointers[2];
-	CVRConduitUpdate* conduitRenderPointers[2];
-	*/
-
-// OVR THINGS
-	ovrSession HMD;
-	ovrResult resultSubmit;
-	ovrHmdDesc hmdDesc;
-	ovrSizei resolution;
-	ovrSizei idealTextureSize;
-	ovrGLTexture * mirrorTexture;
-
-// MAGIC: THE VIEWS;
-	CRhinoView* lView;
-	CRhinoView* rView;
-	int doubleCount;
+	void ManualDibDraw();
+	void HMDDestroy();
+	void makeMortyTex();
 
 // GRAPHICS RHINOSIDE
+
+	CRhinoView* lView;
+	CRhinoView* rView;
+
 	CRhinoUiDib currentDib[2]; // this gets saved
 
 	LPCTSTR currentDibFile;
+
+	int doubleCount;
+	int leftRenderSetTrack;
+	int rightRenderSetTrack;
 
 	GLsizei rhDibW[2];
 	GLsizei rhDibH[2];
@@ -104,29 +63,58 @@ public:
 	CRect vrLeftRect;
 	CRect vrRightRect;
 
-	int leftRenderSetTrack;
-	int rightRenderSetTrack;
+// OVR NATIVES
+	ovrSession HMD;
+	ovrHmdDesc hmdDesc;
+	ovrSizei resolution;
+	ovrSizei idealTextureSize;
 
+// TRACKING LOCATIONS OVR & RHINO
+	// OVR TRACKING
+	ovrTrackingState ts;
+	double sensorSampleTime; // passed during submitFrame, updated when tracking
+	ovrPosef tsEyePoses[2]; // left and right.. final
+	ovrVector3f viewOffsets[2]; // is - const - in OVR example so don't fuck with
+	ovrEyeRenderDesc eyeRenderDescs[2];
 
-// TRACKING
-	ovrVector3f ViewOffset[2]; // is - const - in OVR example so don't fuck with
+// GL / OVR TEX & BUFFERS
+	// OVR GL
+	TextureBuffer *eyeRenderTexture[2];
+	DepthBuffer *eyeDepthBuffer[2];
+	ovrGLTexture *mirrorTexture;
+
+	// GL
+	GLuint mirrorFBO;
+
+	GLuint rhinoTexSet[2];
+	GLuint mortyTex;
+
+	GLuint readBuffer; // should eliminate sided-ness
+	GLuint drawBuffer;
+
+	GLint theTexW[2]; // could be [][] of [rl][w] and [rl][h] but hey!
+	GLint theTexH[2];
+
+	GLint mortyTexW;
+	GLint mortyTexH;
+
+	int renderTrack;
+
+	bool disableConduits;
 
 // MISC DEBUG SHOULD GO AWAY
 	UINT tick;
 	UINT tickDelta;
 	UINT frameEta;
 
-//// OTHERS
-	float scaleMult;
+// INTERFACE VARS
+	float currentScale;
 
 private:
 
 	ovrGraphicsLuid luid;
 
 // Graphics
-	TextureBuffer * eyeRenderTexture[2];
-	DepthBuffer * eyeDepthBuffer[2];
-	GLuint mirrorFBO;
 
 	// call these together to update once and have
 	// access to later. so ts = OVRDoTracking(); and then use ts. following

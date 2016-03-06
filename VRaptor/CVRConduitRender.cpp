@@ -5,7 +5,7 @@ CVRConduitRender::CVRConduitRender()
 	: CRhinoDisplayConduit( CSupportChannels::SC_POSTPROCESSFRAMEBUFFER ) // set notifying channel?
 {
 	RhinoApp().Print(L"Conduits: \t CVRConduitRender Constructor \n");
-	// do init on conduit
+	// do init on conduit. add notes on which view it is...
 }
 
 void CVRConduitRender::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& dp) // called more often than exec... so probably more than once a frame.
@@ -51,16 +51,6 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 
 		RhinoApp().Print(L"firingContuit at PostProcess at Render\n");
 		/*
-
-		// going to try a dumb update loop ...
-
-		// then will try to restructure these conduits.
-		can we have just one and update the eye render dibs manually, as below?
-
-		// and need to do lview->vp->drawToDib()  I think. push lview & rviews 
-		through on a single
-		conduit / view which is *basically* your mirror buffer. lview & rview become 'dummies'
-		and mouse / ux / interaction happens in a single fullscreen view for mouse...
 
 		you've gotta build this differently. 
 		class should know which (lview or rview) it is, the check is not robust enough.
@@ -132,14 +122,7 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 			VR().rightRenderSetTrack = 0;
 		}
 
-		// HGLRC rhinoHGLRC = VR().rView->DisplayPipeline()->GetDrawDC; cannot find
-
-		// wglMakeCurrent(rhinoHDC, NULL); // flip back to rhino ogl context b4 proceeding?
-		
 		break;
-		// need that break, else conduit does not finish, display pipeline becomes upset. then render later.
-		// also we keep out DIB / Rhino and our Texture / OVR code in different playpens
-
   }
   return true;
 }
