@@ -56,9 +56,10 @@ public:
 
 	LPCTSTR currentDibFile;
 
-	int doubleCount;
 	int leftRenderSetTrack;
 	int rightRenderSetTrack;
+	int renderTrack;
+	bool disableConduits;
 
 	GLsizei rhDibW[2];
 	GLsizei rhDibH[2];
@@ -101,17 +102,52 @@ public:
 	GLint mortyTexW;
 	GLint mortyTexH;
 
-	int renderTrack;
-
-	bool disableConduits;
-
 // MISC DEBUG SHOULD GO AWAY
 	UINT tick;
 	UINT tickDelta;
 	UINT frameEta;
 
+	void StoreTimingVars();
+	void PrintTimingVars();
+
 // INTERFACE VARS
 	float currentScale;
+
+
+	// timing floats. Jesus.
+	double tfBegin;
+	ON_SimpleArray<double> tfBeginList;
+	double tfAtDoTracking;
+	ON_SimpleArray<double> tfAtDoTrackingList;
+	double tfAtCamsUpdate;
+	ON_SimpleArray<double> tfAtCamsUpdateList;
+
+	double tfAtSensorSample;
+	ON_SimpleArray<double> tfAtSensorSampleList;
+
+	double tfBeforeRedraw;
+	ON_SimpleArray<double> tfBeforeRedrawList;
+	double tfAfterRedrawCall;
+	ON_SimpleArray<double> tfAfterRedrawCallList;
+	double tfAfterRedrawWait;
+	ON_SimpleArray<double> tfAfterRedrawWaitList;
+
+	double tfAtRenderTop;
+	ON_SimpleArray<double> tfAtRenderTopList;
+	double tfBeforeBytesSwap;
+	ON_SimpleArray<double> tfBeforeBytesSwapList;
+
+	double tfBeforeTextureSetup;
+	ON_SimpleArray<double> tfBeforeTextureSetupList;
+	double tfBeforeTextureBlit;
+	ON_SimpleArray<double> tfBeforeTextureBlitList;
+	double tfAfterTextureWork;
+	ON_SimpleArray<double> tfAfterTextureWorkList;
+
+	double tfBeforeSubmit;
+	ON_SimpleArray<double> tfBeforeSubmitList;
+	double tfEndRender;
+	ON_SimpleArray<double> tfEndRenderList;
 
 private:
 

@@ -31,16 +31,20 @@ static class CCommandVRHMDDebug theVRHMDDebugCommand;
 
 CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext& context )
 {
-	ON_wString wStr;
-	wStr.Format( L"HMD DEBUG: THROWING 2000 UPDATES 2 U\n");
-	RhinoApp().Print( wStr );
+	RhinoApp().Print(  L"HMD DEBUG: THROWING 100 UPDATES 2 U\n" );
 	
-	for(int i=0; i<2000; i++) {
+	for(int i=0; i<100; i++) {
 		VR().HMDViewsUpdate();
-		// there is a wait here.
+		VR().tfAfterRedrawCall =  ovr_GetTimeInSeconds() - VR().tfBegin;
+		RhinoApp().Wait(1); // wait pauses plugin but keeps 'windows message pump' alive. views redraw.
+		VR().tfAfterRedrawWait =  ovr_GetTimeInSeconds() - VR().tfBegin;
 		VR().HMDRender();
+		VR().StoreTimingVars();
 	}
 
+	RhinoApp().Print(L"HMD DEBUG: REPORTING TIMING VARS\n");
+
+	VR().PrintTimingVars();
 
 	return CRhinoCommand::success;
 }

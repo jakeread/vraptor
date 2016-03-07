@@ -176,7 +176,7 @@ void CVRaptorPlugIn::InitHMD()
 	// Make eye render buffers
     for (int eye = 0; eye < 2; ++eye)
     {  // try next to do idealTextureSize before window creation. have to call hmdInit before, then
-		idealTextureSize = ovr_GetFovTextureSize(VR().HMD, ovrEyeType(eye), VR().hmdDesc.DefaultEyeFov[eye], 0.5);
+		idealTextureSize = ovr_GetFovTextureSize(VR().HMD, ovrEyeType(eye), VR().hmdDesc.DefaultEyeFov[eye], 0.35);
         VR().eyeRenderTexture[eye] = new TextureBuffer(VR().HMD, true, true, idealTextureSize, 1, NULL, 1);
         if (!VR().eyeRenderTexture[eye]->TextureSet)
         {
@@ -255,6 +255,9 @@ void CVRaptorPlugIn::InitRHVars() // runs at the end of InitVR command.
 bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
 {
 	// Swap to OVR GL Context
+
+	tfAtRenderTop =  ovr_GetTimeInSeconds() - tfBegin;
+
 	if(!wglMakeCurrent(ovrHDC, ovrHGLRC))
 	{
 		RhinoApp().Print(L"failed to make OVR OGL Context Current");
@@ -267,6 +270,8 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		RhinoApp().Print(L"renderTrack() %i\n", renderTrack);
 
 	using namespace OVR;
+
+	tfBeforeBytesSwap = ovr_GetTimeInSeconds() - tfBegin;
 
 	theBytes[0] =  VR().currentDib[0].FindDIBBits(); // y'all is constant. DIB maybe isn't writing into 32 bit dib.
 	theBytes[1] =  VR().currentDib[1].FindDIBBits(); 
@@ -282,6 +287,8 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		return false;
 	}
 
+	tfBeforeTextureSetup =  ovr_GetTimeInSeconds() - tfBegin;
+
 	//////// SET TEXTURES UP
 	for(int rl = 0; rl<2; rl++)
 	{
@@ -289,11 +296,14 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, VR().rhDibW[rl], VR().rhDibH[rl], 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, theBytes[rl]);
 		// breaks here when gl is unhappy with incoming bits
+		// sometimes this only happens for 1 or two frames: we should update to check for nullness...
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW[rl]);
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH[rl]);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+
+	tfBeforeTextureBlit =  ovr_GetTimeInSeconds() - tfBegin;
 
 	///////// OVR RENDERING
 	for (int eye = 0; eye < 2; ++eye) // flip eye name to rl
@@ -321,6 +331,8 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		glBlitFramebuffer(0, 0, theTexW[eye], theTexH[eye], 0, 0, ovrTexW, ovrTexH, GL_COLOR_BUFFER_BIT, GL_NEAREST); // BLIT IT HOME MORTY
 	}
 
+	tfAfterTextureWork =  ovr_GetTimeInSeconds() - tfBegin;
+
 	// Do distortion rendering, Present and flush/sync
 
 	if (renderTrack < 6) 
@@ -346,6 +358,9 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 	}
 
 	layers = &ld.Header;
+
+	tfBeforeSubmit =  ovr_GetTimeInSeconds() - tfBegin;
+
 	resultSubmit = ovr_SubmitFrame(VR().HMD, 0, &viewScaleDesc, &layers, 1);
 
 	// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
@@ -363,12 +378,17 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
 	SwapBuffers(Platform.hDC);
+
+	tfEndRender =  ovr_GetTimeInSeconds() - tfBegin;
 }
 
 void CVRaptorPlugIn::HMDViewsUpdate()
 {
+	tfBegin = ovr_GetTimeInSeconds();
 	OVRDoTracking(); // to update all vals
+	tfAtDoTracking = ovr_GetTimeInSeconds() - tfBegin;
 	RHCamsUpdate(); // to set cams & redraw, calling OVR in conduit.
+	tfAtCamsUpdate = ovr_GetTimeInSeconds() - tfBegin;
 }
 
 void CVRaptorPlugIn::OVRDoTracking()	// needs to update tsEyePoses
@@ -377,6 +397,8 @@ void CVRaptorPlugIn::OVRDoTracking()	// needs to update tsEyePoses
 {
 	// Query HMD for current tracking state
 	ts = ovr_GetTrackingState(VR().HMD, 0.0, false); 
+	sensorSampleTime = ovr_GetTimeInSeconds();
+	tfAtSensorSample = sensorSampleTime - tfBegin; 
 			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
 			// 3rd arg has to do with latency timing for debugging, when true a timer starts from here -> to measure 'app-to-mid-photon' time. 
 	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked ))
@@ -420,10 +442,7 @@ void CVRaptorPlugIn::OVRDoTracking()	// needs to update tsEyePoses
 
 		//RhinoApp().Print( L"camDir[i] = \t\t\t %f \t %f \t %f \n", camDir[i].x, camDir[i].y, camDir[i].z );
 		//RhinoApp().Print( L"camup[i] = \t\t\t %f \t %f \t %f \n", camUp[i].x, camUp[i].y, camUp[i].z );
-
 	}
-
-	sensorSampleTime = ovr_GetTimeInSeconds();
 }
 
 void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[] to update lView & rView
@@ -439,15 +458,49 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
 
-	
+	tfBeforeRedraw =  ovr_GetTimeInSeconds() - tfBegin;
+
 	lView->Redraw(); // doing this sends dib thru to OVR pretty nicely
 	rView->Redraw();
-
-	RhinoApp().Wait(5); // if we don't wait, redraw() doesn't finish & the GL Texture setup becomes unhappy.
 }
 
 //////////
 // Utilities & Destroyers & Debug
+
+void CVRaptorPlugIn::StoreTimingVars()
+{
+	tfBeginList.Append(tfBegin);
+	tfAtSensorSampleList.Append(tfAtSensorSample);
+	tfBeforeRedrawList.Append(tfBeforeRedraw);
+	tfAfterRedrawCallList.Append(tfAfterRedrawCall);
+	tfAfterRedrawWaitList.Append(tfAfterRedrawWait);
+	tfAtRenderTopList.Append(tfAtRenderTop);
+	tfBeforeBytesSwapList.Append(tfBeforeBytesSwap);
+	tfBeforeTextureSetupList.Append(tfBeforeTextureSetup);
+	tfAfterTextureWorkList.Append(tfAfterTextureWork);
+	tfBeforeSubmitList.Append(tfBeforeSubmit);
+	tfEndRenderList.Append(tfEndRender);
+}
+
+void CVRaptorPlugIn::PrintTimingVars()
+{
+	for(int i = 0; i<tfBeginList.Count(); i++)
+	{
+		//double theVal = *tfBeginList.At(i);
+		RhinoApp().Print(L"tfBegin: \t\t\t %f \n", *tfBeginList.At(i)); // it's pointers in here
+		RhinoApp().Print(L"tfAtSensorSample: \t %f \n", *tfAtSensorSampleList.At(i));
+		RhinoApp().Print(L"tfBeforeRedraw: \t\t %f \n", *tfBeforeRedrawList.At(i));
+		RhinoApp().Print(L"tfAfterRedrawCall: \t %f \n", *tfAfterRedrawCallList.At(i));
+		RhinoApp().Print(L"tfAfterRedrawWait: \t %f \n", *tfAfterRedrawWaitList.At(i));
+		RhinoApp().Print(L"tfAtRenderTop: \t\t %f \n", *tfAtRenderTopList.At(i));
+		RhinoApp().Print(L"tfBeforeBytesSwap: \t %f \n", *tfBeforeBytesSwapList.At(i));
+		RhinoApp().Print(L"tfBeforeTextureSetup: \t %f \n", *tfBeforeTextureSetupList.At(i));
+		RhinoApp().Print(L"tfAfterTextureWork: \t %f \n", *tfAfterTextureWorkList.At(i));
+		RhinoApp().Print(L"tfBeforeSubmit: \t\t %f \n", *tfBeforeSubmitList.At(i));
+		RhinoApp().Print(L"tfEndRender: \t\t %f \n", *tfEndRenderList.At(i));
+		RhinoApp().Print(L"\n");
+	}
+}
 
 void CVRaptorPlugIn::rhinoPrintGuid(GUID guid) {
     RhinoApp().Print(L"{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX} \n", 
