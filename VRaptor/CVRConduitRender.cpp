@@ -26,9 +26,7 @@ void CVRConduitRender::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipe
 				//RhinoApp().Print(L"Conduits: \t NotifyConduit case CN_PORJECTIONCHANGED at ");
 				//RhinoApp().Print( name  );
 				//RhinoApp().Print(L"\n"); 
-
 				//RhinoApp().Print(L"notifyConduit: \tCN_PROJECTIONCHANGED\n");
-
 				// VR().HMDViewsUpdate();
 			}
 	}

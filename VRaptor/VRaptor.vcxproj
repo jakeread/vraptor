@@ -294,6 +294,7 @@
     <ClCompile Include="cmdVRCreateViewSample.cpp" />
     <ClCompile Include="cmdVRHMDDebug.cpp" />
     <ClCompile Include="cmdVRHMDViewsUpdate.cpp" />
+    <ClCompile Include="CRhinoIdleWatcher.cpp" />
     <ClCompile Include="CVRConduitRender.cpp" />
     <ClCompile Include="CVRConduitUpdate.cpp" />
     <ClCompile Include="stdafx.cpp">

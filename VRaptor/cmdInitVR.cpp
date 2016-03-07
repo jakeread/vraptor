@@ -46,7 +46,9 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	////////////////// BEGIN VIEWS INIT
 	
-	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example, makes shit work.
+	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); 
+	// dunno, from example, makes shit work.
+	// docs say to be careful with this one though... so, learning...
 
 	RhinoApp().Print(L"LAUNCHING VR\n");
 	

@@ -33,7 +33,25 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 {
 	RhinoApp().Print(  L"HMD DEBUG: THROWING 100 UPDATES 2 U\n" );
 	
+	VR().idleCount = 0;
+
+	if(!theIdleWatcher.IsRegistered())
+	{
+		theIdleWatcher.Register();
+	}
+	else
+	{
+		theIdleWatcher.Enable(theIdleWatcher.IsEnabled() ? false : true);
+	}
+
+
+	/*
 	for(int i=0; i<100; i++) {
+
+		//RhinoApp().OnIdle();
+
+		//RhinoApp().PumpMessage(); // returns a bool; I think this is to check if messages are 'pumping' ?
+
 		VR().HMDViewsUpdate();
 		VR().tfAfterRedrawCall =  ovr_GetTimeInSeconds() - VR().tfBegin;
 		RhinoApp().Wait(1); // wait pauses plugin but keeps 'windows message pump' alive. views redraw.
@@ -41,10 +59,12 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 		VR().HMDRender();
 		VR().StoreTimingVars();
 	}
+	
 
 	RhinoApp().Print(L"HMD DEBUG: REPORTING TIMING VARS\n");
 
 	VR().PrintTimingVars();
+	*/
 
 	return CRhinoCommand::success;
 }

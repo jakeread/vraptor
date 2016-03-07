@@ -45,6 +45,9 @@
     <ClCompile Include="CVRConduitRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CRhinoIdleWatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VRaptorApp.h">

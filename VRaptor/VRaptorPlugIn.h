@@ -112,6 +112,8 @@ public:
 	void StoreTimingVars();
 	void PrintTimingVars();
 
+	int idleCount;
+
 // INTERFACE VARS
 	float currentScale;
 
@@ -199,6 +201,27 @@ private:
 
   // TODO: Add additional class information here
 };
+
+///////////////// IDLE WATCHER
+
+#pragma region CRhinoIdleWatcher class
+
+class CRhinoIdleWatcher : public CRhinoIsIdle
+{
+public:
+  CRhinoIdleWatcher();
+  void Notify( const class CRhinoIsIdle::CParameters& params );
+
+private:
+  __time64_t m_time0;
+};
+
+// The one and only CRhinoIdleWatcher object
+static class CRhinoIdleWatcher theIdleWatcher;
+
+#pragma endregion
+
+/////////////// CONDUITS
 
 class CVRConduitRender: public CRhinoDisplayConduit // calls HMDRender currently
 {
