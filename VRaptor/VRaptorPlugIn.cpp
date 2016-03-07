@@ -228,6 +228,7 @@ void CVRaptorPlugIn::InitHMD()
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, VR().drawBuffer);
 
 	renderTrack = 0;
+	vrFrameIndex = 0;
 
 	// gotta do this wglMakeCurrent(hDC, hGLRC);
 	// IMPROVE: this can probably call / update without constructing...
@@ -360,8 +361,8 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 	layers = &ld.Header;
 
 	tfBeforeSubmit =  ovr_GetTimeInSeconds() - tfBegin;
-
-	resultSubmit = ovr_SubmitFrame(VR().HMD, 0, &viewScaleDesc, &layers, 1);
+	tfFrameIndexSubmit = vrFrameIndex;
+	resultSubmit = ovr_SubmitFrame(VR().HMD, vrFrameIndex, &viewScaleDesc, &layers, 1);
 
 	// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
 	if (!OVR_SUCCESS(resultSubmit))
@@ -379,6 +380,7 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 	SwapBuffers(Platform.hDC);
 
+	vrFrameIndex ++;
 	tfEndRender =  ovr_GetTimeInSeconds() - tfBegin;
 }
 
@@ -395,8 +397,12 @@ void CVRaptorPlugIn::OVRDoTracking()	// needs to update tsEyePoses
 										// also this should take & hit a pointer, not a var...
 										// ovr_GetTrackingState to pull
 {
+	tfFrameIndexTrack = vrFrameIndex;
+	predictedDisplay = ovr_GetPredictedDisplayTime(VR().HMD, vrFrameIndex);
+	tfPredictedDisplay = predictedDisplay - tfBegin;
+	// need to add ovr_GetPredictedDisplayTime 
 	// Query HMD for current tracking state
-	ts = ovr_GetTrackingState(VR().HMD, 0.0, false); 
+	ts = ovr_GetTrackingState(VR().HMD, predictedDisplay, true); 
 	sensorSampleTime = ovr_GetTimeInSeconds();
 	tfAtSensorSample = sensorSampleTime - tfBegin; 
 			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
@@ -460,7 +466,7 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 
 	tfBeforeRedraw =  ovr_GetTimeInSeconds() - tfBegin;
 
-	lView->Redraw(); // doing this sends dib thru to OVR pretty nicely
+	lView->Redraw(); // doing this sends dib thru to OVR pretty nicely via conduit. 
 	rView->Redraw();
 }
 
@@ -479,12 +485,16 @@ void CVRaptorPlugIn::StoreTimingVars()
 	tfBeforeTextureSetupList.Append(tfBeforeTextureSetup);
 	tfAfterTextureWorkList.Append(tfAfterTextureWork);
 	tfBeforeSubmitList.Append(tfBeforeSubmit);
+	tfPredictedDisplayList.Append(tfPredictedDisplay);
 	tfEndRenderList.Append(tfEndRender);
+
+	tfFrameIndexSubmitList.Append(tfFrameIndexSubmit);
+	tfFrameIndexTrackList.Append(tfFrameIndexTrack);
 }
 
 void CVRaptorPlugIn::PrintTimingVars()
 {
-	for(int i = 0; i<tfBeginList.Count(); i++)
+	for(int i = tfBeginList.Count()/10; i < tfBeginList.Count(); i++)
 	{
 		//double theVal = *tfBeginList.At(i);
 		RhinoApp().Print(L"tfBegin: \t\t\t %f \n", *tfBeginList.At(i)); // it's pointers in here
@@ -497,7 +507,11 @@ void CVRaptorPlugIn::PrintTimingVars()
 		RhinoApp().Print(L"tfBeforeTextureSetup: \t %f \n", *tfBeforeTextureSetupList.At(i));
 		RhinoApp().Print(L"tfAfterTextureWork: \t %f \n", *tfAfterTextureWorkList.At(i));
 		RhinoApp().Print(L"tfBeforeSubmit: \t\t %f \n", *tfBeforeSubmitList.At(i));
+		RhinoApp().Print(L"tfPredictedDisplay: \t %f \n", *tfPredictedDisplayList.At(i));
 		RhinoApp().Print(L"tfEndRender: \t\t %f \n", *tfEndRenderList.At(i));
+		RhinoApp().Print(L"\n");
+		RhinoApp().Print(L"tfFrameIndexSubmit: \t %i \n", *tfFrameIndexSubmitList.At(i));
+		RhinoApp().Print(L"tfFrameIndexTrack: \t %i \n", *tfFrameIndexTrackList.At(i));
 		RhinoApp().Print(L"\n");
 	}
 }

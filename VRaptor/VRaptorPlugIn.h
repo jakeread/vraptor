@@ -77,6 +77,8 @@ public:
 	// OVR TRACKING
 	ovrTrackingState ts;
 	double sensorSampleTime; // passed during submitFrame, updated when tracking
+	long long vrFrameIndex;
+	double predictedDisplay;
 	ovrPosef tsEyePoses[2]; // left and right.. final
 	ovrVector3f viewOffsets[2]; // is - const - in OVR example so don't fuck with
 	ovrEyeRenderDesc eyeRenderDescs[2];
@@ -144,10 +146,18 @@ public:
 	double tfAfterTextureWork;
 	ON_SimpleArray<double> tfAfterTextureWorkList;
 
+	double tfPredictedDisplay;
+	ON_SimpleArray<double> tfPredictedDisplayList;
+
 	double tfBeforeSubmit;
 	ON_SimpleArray<double> tfBeforeSubmitList;
 	double tfEndRender;
 	ON_SimpleArray<double> tfEndRenderList;
+
+	long long tfFrameIndexSubmit;
+	ON_SimpleArray<long long> tfFrameIndexSubmitList;
+	long long tfFrameIndexTrack;
+	ON_SimpleArray<long long> tfFrameIndexTrackList;
 
 private:
 
