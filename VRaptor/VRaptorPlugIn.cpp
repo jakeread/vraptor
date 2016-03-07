@@ -290,7 +290,7 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 	}
 
 	///////// OVR RENDERING
-	for (int eye = 0; eye < 2; ++eye)
+	for (int eye = 0; eye < 2; ++eye) // flip eye name to rl
 	{
 		VR().eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
 
@@ -455,10 +455,19 @@ void CVRaptorPlugIn::rhinoPrintGuid(GUID guid) {
 
 void CVRaptorPlugIn::ManualDibDraw()
 {
-	for(int rl = 0; rl < 2; rl ++)
+	// this writes a Dib which GL does not like to read from.
+	VR().lView->DisplayPipeline()->DrawToDib(VR().currentDib[0], VR().currentDib[0].Width(), VR().currentDib[0].Height(), VR().lView->DisplayAttributes());
+	VR().rView->DisplayPipeline()->DrawToDib(VR().currentDib[1], VR().currentDib[1].Width(), VR().currentDib[1].Height(), VR().rView->DisplayAttributes());
+	// and perhaps we can setup these dibs to not even belong to a VP... 
+	
+}
+
+void CVRaptorPlugIn::ManualDibSave()
+{
+	LPCTSTR dibFiles[2] = {L"D:/vrCurrentDib0.bmp", L"D:/vrCurrentDib1.bmp"};
+	for (int rl = 0; rl<2; rl++)
 	{
-		VR().lView->DisplayPipeline()->DrawToDib(VR().currentDib[rl], VR().currentDib[rl].Width(), VR().currentDib[rl].Height(), VR().lView->DisplayAttributes());
-		// and perhaps we can setup these dibs to not even belong to a VP... 
+		VR().currentDib[rl].SaveBmp(dibFiles[rl]);
 	}
 }
 

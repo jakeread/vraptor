@@ -34,16 +34,11 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	ON_wString wStr;
 	wStr.Format( L"HMD DEBUG: THROWING 2000 UPDATES 2 U\n");
 	RhinoApp().Print( wStr );
-
-	if (false) { //VR().renderTrack == 0
-		VR().InitHMD();
-	}
 	
 	for(int i=0; i<2000; i++) {
 		VR().HMDViewsUpdate();
+		VR().HMDRender();
 	}
-
-	//VR().HMDDisplayAnything();
 
 
 	return CRhinoCommand::success;

@@ -8,6 +8,11 @@ CVRConduitRender::CVRConduitRender()
 	// do init on conduit. add notes on which view it is...
 }
 
+void CVRConduitRender::AssignID(int ID)
+{
+	internalID = ID;
+}
+
 void CVRConduitRender::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipeline& dp) // called more often than exec... so probably more than once a frame.
 {
 	// do shit when conduit is notified: with incoming Notify Tag
@@ -49,77 +54,16 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
   {
 	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER: 
 
-		RhinoApp().Print(L"firingContuit at PostProcess at Render\n");
-		/*
+		RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
 
-		you've gotta build this differently. 
-		class should know which (lview or rview) it is, the check is not robust enough.
-		and there is much else restructuring to do.
-		missed this bet but OK there are bigger fish! Keep it in your head.
-
-		right now all timing is basically off. the big question is how do we know when we have two
-		fresh DIBS? How do we push a render through in a healthy way?
-
-		then we need to do the position update, probably on some timer.. another bit to figure.
-
-		we are getting errors for 'illegal camera position change' so look / learn from some
-		rhino examples re: cam changes
-		
-		watch for & avoid FPU errors - or check this FPUdirty thing.
-
-		home stretch for the rendering core though... this might work!
-
-		*/
-
-		//RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
-
-		GUID theConduitVPID = dp.GetRhinoVP().ViewportId();
-		GUID rightViewVPID = VR().rView->MainViewport().ViewportId();
-		GUID leftViewVPID = VR().lView->MainViewport().ViewportId();
-
-		if ( theConduitVPID == leftViewVPID)
+		if (internalID == 0)
 		{
-			int rl = 0;
-			VR().currentDib[rl] = VR().lView->DisplayPipeline()->GetFrameBuffer();
-			VR().leftRenderSetTrack = 1;
+			VR().currentDib[0] = dp.GetFrameBuffer();
 		}
 
-		if ( theConduitVPID == rightViewVPID )
+		if (internalID == 1)
 		{
-			int rl = 1;
-			VR().currentDib[rl] = VR().rView->DisplayPipeline()->GetFrameBuffer();
-			VR().rightRenderSetTrack = 1;
-		}
-
-		if ( !(theConduitVPID == leftViewVPID) && !(theConduitVPID == rightViewVPID) )
-		{
-			RhinoApp().Print(L"couldn't find a Left or Right VR View on POSTPROCESS at Render Conduit\n");
-
-			RhinoApp().Print(L"theConduitVPID \t");
-			VR().rhinoPrintGuid(theConduitVPID);
-
-			RhinoApp().Print(L"theRightVPID \t");
-			VR().rhinoPrintGuid(rightViewVPID);
-
-			RhinoApp().Print(L"theLeftVPID \t");
-			VR().rhinoPrintGuid(leftViewVPID);
-
-			VR().disableConduits = true;
-		}
-
-		if (true) // if no render, do it regardless. endless loop not initiated
-		{
-			VR().leftRenderSetTrack = 1;
-			VR().rightRenderSetTrack = 1;
-		}
-
-		if (VR().leftRenderSetTrack == 1 && VR().rightRenderSetTrack == 1) // do we have both dibs?
-		{
-			//RhinoApp().Print(L"THROWING RENDER\n");
-			VR().HMDRender(); // will flip to it's OGL context, and render 2 dibs...
-			// VR().OVRDoTracking(); // do it 2 next
-			VR().leftRenderSetTrack = 0;
-			VR().rightRenderSetTrack = 0;
+			VR().currentDib[1] = dp.GetFrameBuffer();
 		}
 
 		break;

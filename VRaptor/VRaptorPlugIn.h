@@ -41,6 +41,7 @@ public:
 // Utilities & Destroyers & Debug
 	void rhinoPrintGuid(GUID guid);
 	void ManualDibDraw();
+	void ManualDibSave();
 	void HMDDestroy();
 	void makeMortyTex();
 
@@ -143,6 +144,9 @@ class CVRConduitRender: public CRhinoDisplayConduit // calls HMDRender currently
 {
 public:
 	CVRConduitRender();
+
+	void AssignID(int ID);
+	int internalID;
 
 	bool ExecConduit(
 		CRhinoDisplayPipeline&,	// pipeline executing this conduit

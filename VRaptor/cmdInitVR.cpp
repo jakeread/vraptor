@@ -117,7 +117,9 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	// try calling this before views creation, 
 	// so that we can use idealTextureSize to make rhino dib sizes
 	
-	/* 
+	// render conduits are not 'sticking' to the windows, though apparently they do the first time?
+
+	/*
 	Bind & Enable render conduits
 	these will write a new DIB at each complete frame
 	into VR().currentDib[2]
@@ -127,8 +129,12 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	vrConduitRenderLeft.Bind( *VR().lView); 
 	vrConduitRenderRight.Bind( *VR().rView); 
 
+	vrConduitRenderLeft.AssignID(0);
+	vrConduitRenderRight.AssignID(1);
+
 	vrConduitRenderLeft.Enable();
 	vrConduitRenderRight.Enable();
+	
 
 	VR().currentScale = 50;
 
