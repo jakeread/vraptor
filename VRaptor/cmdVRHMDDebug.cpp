@@ -37,6 +37,7 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	
 	for(int i=0; i<2000; i++) {
 		VR().HMDViewsUpdate();
+		// there is a wait here.
 		VR().HMDRender();
 	}
 

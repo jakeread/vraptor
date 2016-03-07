@@ -31,10 +31,11 @@ public:
 	void InitOvrWinWomb();
 	void InitHMD();
 	void InitView(CRhinoView *newView, int num);
+	void InitRHVars();
 
 // RUNTIME
 	void HMDViewsUpdate();
-	void HMDRender();
+	bool HMDRender();
 	void OVRDoTracking();
 	void RHCamsUpdate();
 
@@ -44,6 +45,7 @@ public:
 	void ManualDibSave();
 	void HMDDestroy();
 	void makeMortyTex();
+	void bailOnDibInvalid();
 
 // GRAPHICS RHINOSIDE
 
@@ -114,6 +116,18 @@ public:
 private:
 
 	ovrGraphicsLuid luid;
+	// GL Context things
+	HGLRC ovrHGLRC;
+	HWND ovrHWND;
+	HDC ovrHDC;
+
+	// largely belong to HMDRender()
+	LPBYTE theBytes[2];
+	ovrGLTexture* tex;
+	ovrViewScaleDesc viewScaleDesc;
+	ovrLayerEyeFov ld;
+	ovrLayerHeader* layers;
+	ovrResult resultSubmit;
 
 // Graphics
 
@@ -145,7 +159,7 @@ class CVRConduitRender: public CRhinoDisplayConduit // calls HMDRender currently
 public:
 	CVRConduitRender();
 
-	void AssignID(int ID);
+	void SetID(int ID);
 	int internalID;
 
 	bool ExecConduit(

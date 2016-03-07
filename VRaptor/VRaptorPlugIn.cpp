@@ -112,7 +112,7 @@ void CVRaptorPlugIn::InitView(CRhinoView *newView, int num)
 
 	const CWnd *cwndptr = &CWnd::wndNoTopMost;
 			
-	bool setWndThru = rFrameWnd->SetWindowPos(cwndptr, 960/(num+1), 960/2, 960/2, 1080/2, SWP_NOACTIVATE);
+	bool setWndThru = rFrameWnd->SetWindowPos(cwndptr, 960/(2-num), 960/2, idealTextureSize.w, idealTextureSize.h, SWP_NOACTIVATE);
 
 	if (setWndThru == 0)
 	{
@@ -176,7 +176,7 @@ void CVRaptorPlugIn::InitHMD()
 	// Make eye render buffers
     for (int eye = 0; eye < 2; ++eye)
     {  // try next to do idealTextureSize before window creation. have to call hmdInit before, then
-		idealTextureSize = ovr_GetFovTextureSize(VR().HMD, ovrEyeType(eye), VR().hmdDesc.DefaultEyeFov[eye], 1);
+		idealTextureSize = ovr_GetFovTextureSize(VR().HMD, ovrEyeType(eye), VR().hmdDesc.DefaultEyeFov[eye], 0.5);
         VR().eyeRenderTexture[eye] = new TextureBuffer(VR().HMD, true, true, idealTextureSize, 1, NULL, 1);
         if (!VR().eyeRenderTexture[eye]->TextureSet)
         {
@@ -229,36 +229,16 @@ void CVRaptorPlugIn::InitHMD()
 
 	renderTrack = 0;
 
-	// RHINO DIB INIT
-	
-	VR().lView->GetClientRect(VR().vrLeftRect);
-	VR().currentDib[0].CreateDib(VR().vrLeftRect.Width(), VR().vrLeftRect.Height(), 32, true);
-
-	VR().rView->GetClientRect(VR().vrRightRect);
-	VR().currentDib[1].CreateDib(VR().vrRightRect.Width(), VR().vrRightRect.Height(), 32, true); // setup with proper color depth
-}
-
-///////////
-// RUNTIME
-
-void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
-{
 	// gotta do this wglMakeCurrent(hDC, hGLRC);
 	// IMPROVE: this can probably call / update without constructing...
-	HGLRC theHGLRC = Platform.WglContext; // now how do we get these really?
-	HWND theHWND = Platform.Window;
-	HDC theHDC = GetDC(theHWND);
+	ovrHGLRC = Platform.WglContext; // now how do we get these really?
+	ovrHWND = Platform.Window;
+	ovrHDC = GetDC(ovrHWND);
+}
 
-	bool currentSuccess = wglMakeCurrent(theHDC, theHGLRC);
-	if(!currentSuccess)
-	{
-		RhinoApp().Print(L"failed to make OVR Window Current");
-	}
-
-	renderTrack++;
-	RhinoApp().Print(L"renderTrack() %i\n", renderTrack);
-
-	using namespace OVR;
+void CVRaptorPlugIn::InitRHVars() // runs at the end of InitVR command.
+{
+	VR().currentScale = 50;
 
 	////// SET DIB SETTINGS, BYTES
 	for (int rl = 0; rl<2; rl++)
@@ -267,14 +247,40 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		VR().rhDibH[rl] = VR().currentDib[rl].Height(); // OK just need to get the DIB to actually contain a viewport...
 	}
 
-	LPBYTE theBytes[2] = { VR().currentDib[0].FindDIBBits(), VR().currentDib[1].FindDIBBits() }; // y'all is constant. DIB maybe isn't writing into 32 bit dib.
+}
+
+///////////
+// RUNTIME
+
+bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr TextureSet and submits frame
+{
+	// Swap to OVR GL Context
+	if(!wglMakeCurrent(ovrHDC, ovrHGLRC))
+	{
+		RhinoApp().Print(L"failed to make OVR OGL Context Current");
+	}
+
+	wglSwapIntervalEXT(0);
+
+	renderTrack++;
+	if (renderTrack % 100 == 0)
+		RhinoApp().Print(L"renderTrack() %i\n", renderTrack);
+
+	using namespace OVR;
+
+	theBytes[0] =  VR().currentDib[0].FindDIBBits(); // y'all is constant. DIB maybe isn't writing into 32 bit dib.
+	theBytes[1] =  VR().currentDib[1].FindDIBBits(); 
 
 	/*
 	LPCTSTR theDibFile = L"D:/currentDibAtHMDRender.bmp";  // it's a dib alright
 	VR().currentDib[0].SaveBmp(theDibFile);
 	*/
 
-	wglSwapIntervalEXT(0);
+	if (theBytes[0] == nullptr || theBytes[1] == nullptr)
+	{
+		bailOnDibInvalid();
+		return false;
+	}
 
 	//////// SET TEXTURES UP
 	for(int rl = 0; rl<2; rl++)
@@ -282,7 +288,7 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		glBindTexture(GL_TEXTURE_2D, VR().rhinoTexSet[rl]); // 
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, VR().rhDibW[rl], VR().rhDibH[rl], 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, theBytes[rl]);
-		// breaks here
+		// breaks here when gl is unhappy with incoming bits
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &theTexW[rl]);
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &theTexH[rl]);
 
@@ -295,7 +301,7 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		VR().eyeRenderTexture[eye]->TextureSet->CurrentIndex = (eyeRenderTexture[eye]->TextureSet->CurrentIndex + 1) % eyeRenderTexture[eye]->TextureSet->TextureCount;
 
 		// pull current Texture from OVR set
-		ovrGLTexture* tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
+		tex = (ovrGLTexture*)&eyeRenderTexture[eye]->TextureSet->Textures[eyeRenderTexture[eye]->TextureSet->CurrentIndex];
 		glBindTexture(GL_TEXTURE_2D, tex->OGL.TexId);	// bind OVR tex
 
 		// get OVR tex width / height / format
@@ -322,12 +328,10 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 								// so that the first frame actually shows up
 
 	// Set up positional data.
-	ovrViewScaleDesc viewScaleDesc;
 	viewScaleDesc.HmdSpaceToWorldScaleInMeters = 1.0f;
 	viewScaleDesc.HmdToEyeViewOffset[0] = viewOffsets[0];
 	viewScaleDesc.HmdToEyeViewOffset[1] = viewOffsets[1];
 
-	ovrLayerEyeFov ld;
 	ld.Header.Type  = ovrLayerType_EyeFov;
 	ld.Header.Flags = ovrLayerFlag_TextureOriginAtBottomLeft;   // Because OpenGL.
 
@@ -341,8 +345,8 @@ void CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 		ld.SensorSampleTime  = sensorSampleTime;				// updated on tracking
 	}
 
-	ovrLayerHeader* layers = &ld.Header;
-	ovrResult resultSubmit = ovr_SubmitFrame(VR().HMD, 0, &viewScaleDesc, &layers, 1);
+	layers = &ld.Header;
+	resultSubmit = ovr_SubmitFrame(VR().HMD, 0, &viewScaleDesc, &layers, 1);
 
 	// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
 	if (!OVR_SUCCESS(resultSubmit))
@@ -435,12 +439,11 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
 
-
+	
 	lView->Redraw(); // doing this sends dib thru to OVR pretty nicely
 	rView->Redraw();
 
-	RhinoApp().Wait(16); // and our pass off, still neglected
-
+	RhinoApp().Wait(5); // if we don't wait, redraw() doesn't finish & the GL Texture setup becomes unhappy.
 }
 
 //////////
@@ -451,6 +454,12 @@ void CVRaptorPlugIn::rhinoPrintGuid(GUID guid) {
       guid.Data1, guid.Data2, guid.Data3, 
       guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
       guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+}
+
+void CVRaptorPlugIn::bailOnDibInvalid()
+{
+	RhinoApp().Print(L"DIB Bits incoming at HMDRender are Null\n");
+	RhinoApp().Print(L"renderTrack() %i\n", renderTrack);
 }
 
 void CVRaptorPlugIn::ManualDibDraw()

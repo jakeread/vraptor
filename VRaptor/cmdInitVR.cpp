@@ -49,6 +49,8 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	AFX_MANAGE_STATE( ::RhinoApp().RhinoModuleState() ); // dunno, from example, makes shit work.
 
 	RhinoApp().Print(L"LAUNCHING VR\n");
+	
+	VR().InitHMD(); 
 
 	///////////////// BUILD VIEWS
 
@@ -113,30 +115,25 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	
 	//////////////////////////////// END VIEWS INIT
 
-	VR().InitHMD(); 
-	// try calling this before views creation, 
-	// so that we can use idealTextureSize to make rhino dib sizes
-	
-	// render conduits are not 'sticking' to the windows, though apparently they do the first time?
+	// RHINO DIB INIT
+	VR().lView->GetClientRect(VR().vrLeftRect);
+	VR().currentDib[0].CreateDib(VR().vrLeftRect.Width(), VR().vrLeftRect.Height(), 32, true);
 
-	/*
-	Bind & Enable render conduits
-	these will write a new DIB at each complete frame
-	into VR().currentDib[2]
-	and we have to invent a smart way to fire OVR only when both are new...
-	*/
+	VR().rView->GetClientRect(VR().vrRightRect);
+	VR().currentDib[1].CreateDib(VR().vrRightRect.Width(), VR().vrRightRect.Height(), 32, true); // setup with proper color depth
+
+	// Bind & Set & Enable Rendering Conduits
 
 	vrConduitRenderLeft.Bind( *VR().lView); 
 	vrConduitRenderRight.Bind( *VR().rView); 
-
-	vrConduitRenderLeft.AssignID(0);
-	vrConduitRenderRight.AssignID(1);
+	 
+	vrConduitRenderLeft.SetID(0);
+	vrConduitRenderRight.SetID(1);
 
 	vrConduitRenderLeft.Enable();
 	vrConduitRenderRight.Enable();
 	
-
-	VR().currentScale = 50;
+	VR().InitRHVars();
 
 	RhinoApp().Print(L"ALL the VRs are now Init\n");
 

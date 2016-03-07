@@ -8,7 +8,7 @@ CVRConduitRender::CVRConduitRender()
 	// do init on conduit. add notes on which view it is...
 }
 
-void CVRConduitRender::AssignID(int ID)
+void CVRConduitRender::SetID(int ID)
 {
 	internalID = ID;
 }
@@ -54,16 +54,28 @@ bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
   {
 	case CSupportChannels::SC_POSTPROCESSFRAMEBUFFER: 
 
-		RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
+		// RhinoApp().Print(L"execConduit: \tSC_POSTPROCESSFRAMEBUFFER\n");
 
 		if (internalID == 0)
 		{
 			VR().currentDib[0] = dp.GetFrameBuffer();
+			VR().leftRenderSetTrack = true;
+			//RhinoApp().Print(L"LEFTSET\n");
 		}
 
 		if (internalID == 1)
 		{
 			VR().currentDib[1] = dp.GetFrameBuffer();
+			VR().rightRenderSetTrack = true;
+			//RhinoApp().Print(L"RIGHTSET\n");
+		}
+
+		if (VR().leftRenderSetTrack && VR().rightRenderSetTrack)
+		{
+			VR().leftRenderSetTrack = false;
+			VR().rightRenderSetTrack = false;
+			//RhinoApp().Print(L"FIRE\n");
+			//VR().HMDRender();  // -> this method is causing left/right jitter. to debug later
 		}
 
 		break;
