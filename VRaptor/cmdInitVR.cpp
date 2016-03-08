@@ -61,8 +61,8 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	VR().lView = 0; // initialize object views
 	VR().rView = 0;
-	//ON_SimpleArray<CRhinoView*> lrViews; // will contain our vr views
-
+	VR().hView = 0;
+	
 	// builds a list of (current) viewport IDs
 	context.m_doc.GetViewList( viewList, true, false );
 	for ( int i = 0; i < viewList.Count(); i ++)
@@ -75,7 +75,8 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	viewList.Empty(); // empty bc we are going to re-build later when new views
 
 	context.m_doc.NewView( ON_3dmView() );
-	context.m_doc.NewView( ON_3dmView() ); // put two new views into doc
+	context.m_doc.NewView( ON_3dmView() ); // put three new views into doc
+	context.m_doc.NewView( ON_3dmView() ); 
 
 	context.m_doc.GetViewList( viewList, true, false);
 
@@ -88,10 +89,15 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 			int rc = viewportIds.Search( tempView->ActiveViewportID() ); // returns index of 1st element which satisfies search. returns -1 when no such item found
 			if (rc < 0 ) // if current tempView did not exist prior to this running
 			{
+				if (viewFindCount > 1)
+				{
+					VR().hView = tempView;
+					break;
+				}
 				if (viewFindCount > 0) // and if lr already found 1
 				{
 					VR().rView = tempView; // right is 2nd view we find
-					break;
+					viewFindCount = 2;
 					// so this breaks when we find, and lView is left as the viewList[i] where we found the new viewport, whose ID was not in our list.
 					// and we are left with lView being = viewList[i] at new view
 				}
@@ -113,6 +119,7 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	{
 		VR().InitView(VR().lView, 0); // uses tag (2nd arg) to set view specific: names, locations
 		VR().InitView(VR().rView, 1);
+		VR().InitView(VR().hView, 2);
 	}
 	
 	//////////////////////////////// END VIEWS INIT

@@ -109,14 +109,22 @@ void CVRaptorPlugIn::InitView(CRhinoView *newView, int num)
 	CFrameWnd *rFrameWnd;
 	rFrameWnd = newView->FloatRhinoView(true); // returns pointer to the view's parent container
 	HWND rHWnd = rFrameWnd->GetSafeHwnd();
+	bool setWndThru;
 
 	const CWnd *cwndptr = &CWnd::wndNoTopMost;
-			
-	bool setWndThru = rFrameWnd->SetWindowPos(cwndptr, 960/(2-num), 960/2, idealTextureSize.w, idealTextureSize.h, SWP_NOACTIVATE);
+
+	if(num == 2) // special 'control' window
+	{
+		setWndThru = rFrameWnd->SetWindowPos(cwndptr, 970, 10, 940,1060, SWP_NOACTIVATE);
+	}
+	else
+	{
+		setWndThru = rFrameWnd->SetWindowPos(cwndptr, (960/2)*num, 700, idealTextureSize.w, idealTextureSize.h, SWP_NOACTIVATE);
+	}
 
 	if (setWndThru == 0)
 	{
-		RhinoApp().Print(L"windowSet failed at rView\n");
+		RhinoApp().Print(L"windowSet failed\n");
 	} 
 
 	// set names
@@ -124,9 +132,12 @@ void CVRaptorPlugIn::InitView(CRhinoView *newView, int num)
 		newView->ActiveViewport().SetName(L"lView");
 	if(num == 1)
 		newView->ActiveViewport().SetName(L"rView");
+	if(num == 2)
+		newView->ActiveViewport().SetName(L"hView");
 	
 	newView->ActiveViewport().m_v.m_vp.ChangeToPerspectiveProjection(50,true,24);
-	//newView->Redraw();
+
+	newView->Redraw();
 }
 
 void CVRaptorPlugIn::InitOvrWinWomb()
@@ -453,15 +464,18 @@ void CVRaptorPlugIn::OVRDoTracking()	// needs to update tsEyePoses
 
 void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[] to update lView & rView
 {
-	// doing dumb update
-	// set proper rotations etc with new XYZ data / flipped coordinate systems
+	// get dir, pos of hView;
 
-	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[0]);
-	lView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[0]);
+	hCamLoc = hView->ActiveViewport().m_v.m_vp.CameraLocation();
+	hCamDir = hView->ActiveViewport().m_v.m_vp.CameraDirection();
+	hCamUp = hView->ActiveViewport().m_v.m_vp.CameraUp();
+
+	lView->ActiveViewport().m_v.m_vp.SetCameraLocation(hCamLoc + camLoc[0]);
+	lView->ActiveViewport().m_v.m_vp.SetCameraDirection(hCamDir + camDir[0]);
 	lView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[0]);
 	
-	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(camLoc[1]);
-	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(camDir[1]);
+	rView->ActiveViewport().m_v.m_vp.SetCameraLocation(hCamLoc + camLoc[1]);
+	rView->ActiveViewport().m_v.m_vp.SetCameraDirection(hCamDir + camDir[1]);
 	rView->ActiveViewport().m_v.m_vp.SetCameraUp(camUp[1]);
 
 	tfBeforeRedraw =  ovr_GetTimeInSeconds() - tfBegin;

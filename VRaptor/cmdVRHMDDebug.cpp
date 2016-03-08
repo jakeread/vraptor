@@ -35,6 +35,7 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 	
 	VR().idleCount = 0;
 
+	
 	if(!theIdleWatcher.IsRegistered())
 	{
 		theIdleWatcher.Register();
@@ -44,8 +45,8 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 		theIdleWatcher.Enable(theIdleWatcher.IsEnabled() ? false : true);
 	}
 
-
 	/*
+	
 	for(int i=0; i<100; i++) {
 
 		//RhinoApp().OnIdle();
@@ -58,13 +59,14 @@ CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext
 		VR().tfAfterRedrawWait =  ovr_GetTimeInSeconds() - VR().tfBegin;
 		VR().HMDRender();
 		VR().StoreTimingVars();
+		//Sleep(500);
 	}
-	
+	*/
 
 	RhinoApp().Print(L"HMD DEBUG: REPORTING TIMING VARS\n");
 
 	VR().PrintTimingVars();
-	*/
+	
 
 	return CRhinoCommand::success;
 }

@@ -51,6 +51,7 @@ public:
 
 	CRhinoView* lView;
 	CRhinoView* rView;
+	CRhinoView* hView;
 
 	CRhinoUiDib currentDib[2]; // this gets saved
 
@@ -191,6 +192,10 @@ private:
 	OVR::Vector3<float> rotationVector;
  
 /// cams 
+
+	ON_3dPoint hCamLoc;
+	ON_3dVector hCamDir;
+	ON_3dVector hCamUp;
 
 	ON_3dPoint camLoc[2];
 	ON_3dVector camDir[2];

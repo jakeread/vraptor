@@ -17,7 +17,7 @@ void CRhinoIdleWatcher::Notify( const class CRhinoIsIdle::CParameters& params )
 	VR().tfAfterRedrawWait =  ovr_GetTimeInSeconds() - VR().tfBegin;
 	VR().HMDRender();
 	VR().StoreTimingVars();
-	RhinoApp().Print(L"CRhinoIdleWatcher: %i\n", VR().idleCount);
+	//RhinoApp().Print(L"CRhinoIdleWatcher: %i\n", VR().idleCount);
 }
 
 //void CRhinoIdleWatcher::CRhinoEventWatcherEx
