@@ -94,6 +94,7 @@
 
 #include <SOIL.h>
 
+#include "rhinoEscapeKey.h"
 
 // I think a new approach to setting up the rendering is needed. Check the examples, but this file below
 //#include "../../OculusSDK/Samples/OculusRoomTiny_Advanced/Common//Win32_GLAppUtil.h"

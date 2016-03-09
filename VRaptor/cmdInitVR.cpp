@@ -143,10 +143,19 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	VR().InitRHVars(); 
 
+	/*
+	// to set to shaded...
+	const CDisplayPipelineAttributes* pShddAttrbs = CRhinoDisplayAttrsMgr::StdShadedAttrs();
+
+	VR().hView->DisplayPipeline()->SetDisplayMode(pShddAttrbs->Id());
+
+	*/
+
+	/* // disabled currently in favour of manual-escape 4ever loop
 	// IDLE WATCHER (FIRES UPDATE LOOP)
 	VR().idleCount = 0;
 	
-	if(!theIdleWatcher.IsRegistered())
+	if(!theIdleWatcher.IsRegistered()) 
 	{
 		theIdleWatcher.Register();
 	}
@@ -154,10 +163,13 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	{
 		theIdleWatcher.Enable(theIdleWatcher.IsEnabled() ? false : true); // flip 2 tru
 	}
+	*/
 	
+	/*
 	// UPDATE WATCHER (from Master View)
 	vrConduitUpdateH.Bind( *VR().hView);
 	vrConduitUpdateH.Enable();
+	*/
 
 	RhinoApp().Print(L"ALL the VRs are now Init\n");
 

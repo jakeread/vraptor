@@ -290,6 +290,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cmdInitVR.cpp" />
+    <ClCompile Include="cmdLaunchVR.cpp" />
     <ClCompile Include="cmdVRaptor.cpp" />
     <ClCompile Include="cmdVRCreateViewSample.cpp" />
     <ClCompile Include="cmdVRHMDDebug.cpp" />
@@ -297,6 +298,8 @@
     <ClCompile Include="CRhinoIdleWatcher.cpp" />
     <ClCompile Include="CVRConduitRender.cpp" />
     <ClCompile Include="CVRConduitUpdate.cpp" />
+    <ClCompile Include="rhinoEscapeKey.cpp" />
+    <ClCompile Include="rhinoGetPoint.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -310,6 +313,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="rhinoEscapeKey.h" />
     <ClInclude Include="SOIL\Simple OpenGL Image Library\src\SOIL.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="VRaptorApp.h" />

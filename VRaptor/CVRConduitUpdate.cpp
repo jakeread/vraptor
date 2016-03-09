@@ -33,7 +33,7 @@ bool CVRConduitUpdate::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, boo
 		
 		if(VR().renderTrack < 50)
 		{
-			RhinoApp().Print(L"execConduit: Update: hView: \tSC_INITFRAMEBUFFER\n");
+			// RhinoApp().Print(L"execConduit: Update: hView: \tSC_INITFRAMEBUFFER\n");
 		}
 		else
 		{

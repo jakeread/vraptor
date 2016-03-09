@@ -373,7 +373,7 @@ bool CVRaptorPlugIn::HMDRender() //copies current lView and rView buffers to ovr
 
 	tfBeforeSubmit =  ovr_GetTimeInSeconds() - tfBegin;
 	tfFrameIndexSubmit = vrFrameIndex;
-	resultSubmit = ovr_SubmitFrame(VR().HMD, vrFrameIndex, &viewScaleDesc, &layers, 1);
+	resultSubmit = ovr_SubmitFrame(VR().HMD, 0, &viewScaleDesc, &layers, 1); // vrFrameIndex = 0 here to just submit 'one after the last'.
 
 	// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
 	if (!OVR_SUCCESS(resultSubmit))
@@ -409,11 +409,11 @@ void CVRaptorPlugIn::OVRDoTracking()	// needs to update tsEyePoses
 										// ovr_GetTrackingState to pull
 {
 	tfFrameIndexTrack = vrFrameIndex;
-	predictedDisplay = ovr_GetPredictedDisplayTime(VR().HMD, vrFrameIndex);
+	predictedDisplay = ovr_GetPredictedDisplayTime(VR().HMD, vrFrameIndex); 
 	tfPredictedDisplay = predictedDisplay - tfBegin;
 	// need to add ovr_GetPredictedDisplayTime 
 	// Query HMD for current tracking state
-	ts = ovr_GetTrackingState(VR().HMD, predictedDisplay, true); 
+	ts = ovr_GetTrackingState(VR().HMD, 0, true); // 2nd arg could be predictedDisplay, not bc our timing loop is in question.
 	sensorSampleTime = ovr_GetTimeInSeconds();
 	tfAtSensorSample = sensorSampleTime - tfBegin; 
 			// 2nd arg, abstime, defines what absolute system time we want a reading for. 0.0 for most recent reading, where 'predicted pose' and 'sample pose' will be identical.
@@ -484,14 +484,37 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	rView->Redraw();
 }
 
+void CVRaptorPlugIn::Inputs()
+{
+	if(GetCursorPos(&cPt))
+	{
+		RhinoApp().Print(L"cursorPos: %d, %d\n", cPt.x, cPt.y);
+	}
+
+	cPtPt = ON_3dPoint(cPt.x, cPt.y, 0);
+	lView->DisplayPipeline()->DrawPoint(cPtPt, 100, ERhinoPointStyle::RPS_TRIPLE_DOT, RGB(255,255,255));
+	hView->DisplayPipeline()->DrawPoint(cPtPt, 100, ERhinoPointStyle::RPS_SINGLE_DOT, RGB(255,255,255));
+
+	// having trouble getting it to display.
+	// can add a new point object to rhino, then destroy it... needs to be in context of command, & sloppy regardless
+
+	//hView->DisplayPipeline()->DrawLine(ON_3dPoint(0,0,0), &cPtPt);
+	/*
+	if(SetCursorPos(100,100))
+	{
+		RhinoApp().Print(L"cursorPos: 100, 100\n");
+	}
+	*/
+}
+
 void CVRaptorPlugIn::StdUpdate()
 {
-	VR().HMDViewsUpdate();
+	VR().HMDViewsUpdate(); // does views position update & redraw.
 	VR().tfAfterRedrawCall =  ovr_GetTimeInSeconds() - VR().tfBegin;
 	RhinoApp().Wait(1); // wait pauses plugin but keeps 'windows message pump' alive. views redraw.
 	VR().tfAfterRedrawWait =  ovr_GetTimeInSeconds() - VR().tfBegin;
 	VR().HMDRender();
-	VR().StoreTimingVars();
+	// VR().StoreTimingVars();
 }
 
 //////////

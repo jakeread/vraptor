@@ -38,6 +38,7 @@ public:
 	bool HMDRender();
 	void OVRDoTracking();
 	void RHCamsUpdate();
+	void Inputs();
 	void StdUpdate();
 
 // Utilities & Destroyers & Debug
@@ -118,7 +119,8 @@ public:
 
 // INTERFACE VARS
 	float currentScale;
-
+	POINT cPt;
+	ON_3dPoint cPtPt;
 
 	// timing floats. Jesus.
 	double tfBegin;
@@ -278,3 +280,6 @@ CVRaptorPlugIn& VRaptorPlugIn();
 CVRaptorPlugIn& VR();
 
 
+// UI
+
+int EscapeKeyPressed();

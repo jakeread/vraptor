@@ -31,10 +31,9 @@ static class CCommandVRHMDDebug theVRHMDDebugCommand;
 
 CRhinoCommand::result CCommandVRHMDDebug::RunCommand( const CRhinoCommandContext& context )
 {
-	RhinoApp().Print(L"HMD DEBUG: REPORTING TIMING VARS\n");
+	RhinoApp().Print(L"HMD DEBUG: Calling StdUpdate once...\n");
 
-	VR().PrintTimingVars();
-	
+	VR().StdUpdate();
 
 	return CRhinoCommand::success;
 }
