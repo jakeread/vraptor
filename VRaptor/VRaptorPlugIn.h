@@ -38,6 +38,7 @@ public:
 	bool HMDRender();
 	void OVRDoTracking();
 	void RHCamsUpdate();
+	void StdUpdate();
 
 // Utilities & Destroyers & Debug
 	void rhinoPrintGuid(GUID guid);

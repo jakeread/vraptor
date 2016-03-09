@@ -33,8 +33,7 @@ public:
 	CVRConduitRender vrConduitRenderLeft;
 	CVRConduitRender vrConduitRenderRight;
 
-	CVRConduitUpdate vrConduitUpdateLeft;
-	CVRConduitUpdate vrConduitUpdateRight;
+	CVRConduitUpdate vrConduitUpdateH;
 
 };
 
@@ -131,7 +130,7 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 	VR().rView->GetClientRect(VR().vrRightRect);
 	VR().currentDib[1].CreateDib(VR().vrRightRect.Width(), VR().vrRightRect.Height(), 32, true); // setup with proper color depth
 
-	// Bind & Set & Enable Rendering Conduits
+	// RENDERING CONDUITS (Write to DIBS)
 
 	vrConduitRenderLeft.Bind( *VR().lView); 
 	vrConduitRenderRight.Bind( *VR().rView); 
@@ -141,8 +140,24 @@ CRhinoCommand::result CCommandInitVR::RunCommand( const CRhinoCommandContext& co
 
 	vrConduitRenderLeft.Enable();
 	vrConduitRenderRight.Enable();
+
+	VR().InitRHVars(); 
+
+	// IDLE WATCHER (FIRES UPDATE LOOP)
+	VR().idleCount = 0;
 	
-	VR().InitRHVars();
+	if(!theIdleWatcher.IsRegistered())
+	{
+		theIdleWatcher.Register();
+	}
+	else
+	{
+		theIdleWatcher.Enable(theIdleWatcher.IsEnabled() ? false : true); // flip 2 tru
+	}
+	
+	// UPDATE WATCHER (from Master View)
+	vrConduitUpdateH.Bind( *VR().hView);
+	vrConduitUpdateH.Enable();
 
 	RhinoApp().Print(L"ALL the VRs are now Init\n");
 

@@ -484,6 +484,16 @@ void CVRaptorPlugIn::RHCamsUpdate() // uses current camLoc[] camDir[] and camUp[
 	rView->Redraw();
 }
 
+void CVRaptorPlugIn::StdUpdate()
+{
+	VR().HMDViewsUpdate();
+	VR().tfAfterRedrawCall =  ovr_GetTimeInSeconds() - VR().tfBegin;
+	RhinoApp().Wait(1); // wait pauses plugin but keeps 'windows message pump' alive. views redraw.
+	VR().tfAfterRedrawWait =  ovr_GetTimeInSeconds() - VR().tfBegin;
+	VR().HMDRender();
+	VR().StoreTimingVars();
+}
+
 //////////
 // Utilities & Destroyers & Debug
 

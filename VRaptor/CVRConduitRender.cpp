@@ -21,13 +21,7 @@ void CVRConduitRender::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipe
 	{
 		case CN_PROJECTIONCHANGED:
 			{
-				//ON_wString name;
-				//name.Format( this->m_pView->ActiveViewport().Name() );
 				//RhinoApp().Print(L"Conduits: \t NotifyConduit case CN_PORJECTIONCHANGED at ");
-				//RhinoApp().Print( name  );
-				//RhinoApp().Print(L"\n"); 
-				//RhinoApp().Print(L"notifyConduit: \tCN_PROJECTIONCHANGED\n");
-				// VR().HMDViewsUpdate();
 			}
 	}
 
@@ -36,12 +30,6 @@ void CVRConduitRender::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipe
 bool CVRConduitRender::ExecConduit(CRhinoDisplayPipeline& dp, UINT nChannel, bool& bTerminate)
 {
 	//RhinoApp().Print(L"ExecConduit top\n");
-	// do shit when conduit it executed?
-
-	/*
-	HWND rhinoHWND = VR().rView->GetSafeHwnd();
-	HDC rhinoHDC = GetDC(rhinoHWND);
-	*/
 
 	if (VR().disableConduits == true)
 	{
