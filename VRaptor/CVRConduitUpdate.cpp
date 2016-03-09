@@ -13,7 +13,7 @@ void CVRConduitUpdate::NotifyConduit(EConduitNotifiers Notify, CRhinoDisplayPipe
 	{
 		case CN_PROJECTIONCHANGED:
 			{
-				// notified.
+				// notified. idk.
 			}
 	}
 
